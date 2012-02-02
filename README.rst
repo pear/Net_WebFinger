@@ -115,23 +115,7 @@ TODO
 =======
 Testing
 =======
-- Gmail
-
-  - daniel.oconnor@gmail.com
-  - demon.gene@gmail.com
-  - klimpong@gmail.com
-  - evalpaul@gmail.com
-
-- Yahoo
-
-  - maxarbos@yahoo.com
-  - mcorne@yahoo.com
-
-- AOL
-
-  - M4dSquirrels@aol.com
-  - Sarkana@aol.com
-  - GDRODE@aol.com
+- See test-mail
 
 - Myspace/facebook?
 
