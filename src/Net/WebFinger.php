@@ -38,6 +38,7 @@ class Net_WebFinger
         }
 
         $userUrl = str_replace('{uri}', urlencode($account), $link->template);
+        //FIXME: mark insecure when url isn't https
         $react->userXrd = $this->loadXrd($userUrl);
 
         return $react;
