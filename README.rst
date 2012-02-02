@@ -125,10 +125,12 @@ References
 
 - IETF draft: http://www.ietf.org/id/draft-jones-appsawg-webfinger-00.txt
 - Specification: http://code.google.com/p/webfinger/wiki/WebFingerProtocol
+- Mailing list: http://groups.google.com/group/webfinger
 - Link relations: http://code.google.com/p/webfinger/wiki/CommonLinkRelations
 - http://hueniverse.com/2009/09/implementing-webfinger/
 - http://hueniverse.com/2009/09/openid-and-lrdd/
 - http://paulosman.me/2010/02/01/google-webfinger.html Google have since rolled out WebFinger support for everyone with a Google Profile.
 - Finger history: http://www.rajivshah.com/Case_Studies/Finger/Finger.htm
 - Ruby implementation: http://intridea.com/2010/2/12/redfinger-a-ruby-webfinger-gem
+- Perl implementation: http://search.cpan.org/~tobyink/WWW-Finger-0.101/lib/WWW/Finger/Webfinger.pm
 - XRD: http://docs.oasis-open.org/xri/xrd/v1.0/xrd-1.0.html
