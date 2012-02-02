@@ -123,6 +123,7 @@ Testing
 References
 ==========
 
+- IETF draft: http://www.ietf.org/id/draft-jones-appsawg-webfinger-00.txt
 - Specification: http://code.google.com/p/webfinger/wiki/WebFingerProtocol
 - Link relations: http://code.google.com/p/webfinger/wiki/CommonLinkRelations
 - http://hueniverse.com/2009/09/implementing-webfinger/
