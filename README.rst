@@ -130,3 +130,4 @@ References
 - http://paulosman.me/2010/02/01/google-webfinger.html Google have since rolled out WebFinger support for everyone with a Google Profile.
 - Finger history: http://www.rajivshah.com/Case_Studies/Finger/Finger.htm
 - Ruby implementation: http://intridea.com/2010/2/12/redfinger-a-ruby-webfinger-gem
+- XRD: http://docs.oasis-open.org/xri/xrd/v1.0/xrd-1.0.html

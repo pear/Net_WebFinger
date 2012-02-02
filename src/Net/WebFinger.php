@@ -14,7 +14,7 @@ class Net_WebFinger
     public function finger($email)
     {
         $email   = strtolower($email);
-        $host    = substr($email, strpos($email, '@'));
+        $host    = substr($email, strpos($email, '@') + 1);
         $account = 'acct:' . $email;
 
         $react  = new Net_WebFinger_Reaction($email);
@@ -30,7 +30,7 @@ class Net_WebFinger
             }
         }
         $react->hostMetaXrd = $xrd;
-        $react->secure &= $xrd->describes($host);
+        $react->secure = (bool)($react->secure & $xrd->describes($host));
 
         $link = $xrd->get('lrdd', 'application/xrd+xml');
         if ($link === null || !$link->template) {
