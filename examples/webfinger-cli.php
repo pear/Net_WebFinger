@@ -35,7 +35,7 @@ if ($res->openid === null) {
 
 if ($res->userXrd) {
     foreach ($res->userXrd as $link) {
-        echo 'Link: ' . $link->rel . ': ' . $link->href . "\n";
+        echo 'Link: ' . $link->rel . ': ' . ($link->href ? $link->href : $link->template) . "\n";
     }
 }
 

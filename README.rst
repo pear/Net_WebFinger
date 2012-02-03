@@ -134,3 +134,6 @@ References
 - Ruby implementation: http://intridea.com/2010/2/12/redfinger-a-ruby-webfinger-gem
 - Perl implementation: http://search.cpan.org/~tobyink/WWW-Finger-0.101/lib/WWW/Finger/Webfinger.pm
 - XRD: http://docs.oasis-open.org/xri/xrd/v1.0/xrd-1.0.html
+- Wordpress plugin: http://blog.duthied.com/2011/08/30/webfinger-profile-plugin/
+   http://wordpress.org/extend/plugins/webfinger-profile/
+- PHP implementation: https://github.com/walkah/discovery-php
