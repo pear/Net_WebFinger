@@ -33,4 +33,10 @@ if ($res->openid === null) {
     echo 'OpenID provider: ' . $res->openid . "\n";
 }
 
+if ($res->userXrd) {
+    foreach ($res->userXrd as $link) {
+        echo 'Link: ' . $link->rel . ': ' . $link->href . "\n";
+    }
+}
+
 ?>
