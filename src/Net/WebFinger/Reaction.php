@@ -1,6 +1,27 @@
 <?php
 /**
+ * Part of Net_WebFinger
+ *
+ * PHP version 5
+ *
+ * @category Networking
+ * @package  Net_WebFinger
+ * @author   Christian Weiske <cweiske@php.net>
+ * @license  http://www.gnu.org/copyleft/lesser.html LGPL
+ * @link     http://pear.php.net/package/Net_WebFinger
+ */
+
+/**
  * The reaction (=result) of a (web)finger action.
+ *
+ * Returned by Net_WebFinger::finger().
+ *
+ * @category Networking
+ * @package  Net_WebFinger
+ * @author   Christian Weiske <cweiske@php.net>
+ * @license  http://www.gnu.org/copyleft/lesser.html LGPL
+ * @link     http://pear.php.net/package/Net_WebFinger
+ * @see      Net_WebFinger::finger()
  */
 class Net_WebFinger_Reaction
 {
@@ -27,7 +48,15 @@ class Net_WebFinger_Reaction
 
     /**
      * If the WebFinger result has been obtained from secure sources.
+     *
      * There might be a man-in-the-middle attack if it is not secure.
+     *
+     * The result is considered secure when the XRD files have been obtained
+     * via HTTPS or the files were signed with XML signatures.
+     *
+     * Also, the XRD files need to have the correct subject (or alias) set.
+     *
+     * Note: The signatures are not supported yet.
      *
      * @var boolean
      */
@@ -65,6 +94,9 @@ class Net_WebFinger_Reaction
      * @param string $variable Requested class variable
      *
      * @return string URL or NULL if not found
+     *
+     * @see $shortNameMap
+     * @see get()
      */
     public function __get($variable)
     {
@@ -78,7 +110,8 @@ class Net_WebFinger_Reaction
     /**
      * Get the link URL with highest priority for the given relation and type.
      *
-     * @param string  $rel          Relation name
+     * @param string  $rel          Relation name, e.g.
+     *                              "http://microformats.org/profile/hcard"
      * @param string  $type         MIME Type
      * @param boolean $typeFallback When true and no link with the given type
      *                              could be found, the best link without a
@@ -100,7 +133,8 @@ class Net_WebFinger_Reaction
     /**
      * Get the link with highest priority for the given relation and type.
      *
-     * @param string  $rel          Relation name
+     * @param string  $rel          Relation name, e.g.
+     *                              "http://microformats.org/profile/hcard"
      * @param string  $type         MIME Type
      * @param boolean $typeFallback When true and no link with the given type
      *                              could be found, the best link without a

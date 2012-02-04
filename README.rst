@@ -27,8 +27,8 @@ OpenID discovery
 Caching
 =======
 With caching, the retrieved files will be stored locally which leads to faster
-lookup times when the same email address is loaded again, and when another
-email account on the same host is retrieved.
+lookup times when the same identifier (email address) is loaded again, and when
+another identifier on the same host is retrieved.
 
 ::
 

@@ -1,31 +1,64 @@
 <?php
+/**
+ * Part of Net_WebFinger
+ *
+ * PHP version 5
+ *
+ * @category Networking
+ * @package  Net_WebFinger
+ * @author   Christian Weiske <cweiske@php.net>
+ * @license  http://www.gnu.org/copyleft/lesser.html LGPL
+ * @link     http://pear.php.net/package/Net_WebFinger
+ */
+
 require_once 'Net/WebFinger/Reaction.php';
 require_once 'XML/XRD.php';
 
+/**
+ * PHP WebFinger client. Performs discovery and returns a result.
+ *
+ * At first, the account's host's .well-known/host-meta file is fetched,
+ * then the file indicated by the "lrdd" type.
+ *
+ * <code>
+ * require_once 'Net/WebFinger.php';
+ * $wf = new Net_WebFinger();
+ * $react = $wf->finger('user@example.org');
+ * echo 'OpenID: ' . $react->openid . "\n";
+ * </code>
+ *
+ * @category Networking
+ * @package  Net_WebFinger
+ * @author   Christian Weiske <cweiske@php.net>
+ * @license  http://www.gnu.org/copyleft/lesser.html LGPL
+ * @link     http://pear.php.net/package/Net_WebFinger
+ */
 class Net_WebFinger
 {
     /**
-     * Finger a email address - get information about it.
+     * Finger a email address like identifier - get information about it.
      *
-     * @param string $email E-mail address
+     * @param string $identifier E-mail address like identifier ("user@host")
      *
      * @return Net_WebFinger_Reaction Reaction object
      */
-    public function finger($email)
+    public function finger($identifier)
     {
-        $email   = strtolower($email);
-        $host    = substr($email, strpos($email, '@') + 1);
-        $account = 'acct:' . $email;
+        $identifier = strtolower($identifier);
+        $host       = substr($identifier, strpos($identifier, '@') + 1);
+        $account    = 'acct:' . $identifier;
 
-        $react  = new Net_WebFinger_Reaction($email);
+        $react = new Net_WebFinger_Reaction($identifier);
 
-        $xrd = $this->loadXrd('https://' . $host . '/.well-known/host-meta');
+        $xrd = $this->loadXrd('https://' . $host . '/.well-known/host-meta', $react);
         if (!$xrd) {
-            $xrd = $this->loadXrd('http://' . $host . '/.well-known/host-meta');
+            $xrd = $this->loadXrd(
+                'http://' . $host . '/.well-known/host-meta', $react
+            );
             //TODO: XML signature verification once supported by XML_XRD
             $react->secure = false;
             if (!$xrd) {
-                $react->error = 'No .well-known/host-meta';
+                $react->error = 'No .well-known/host-meta for ' . $host;
                 return $react;
             }
         }
@@ -38,8 +71,14 @@ class Net_WebFinger
         }
 
         $userUrl = str_replace('{uri}', urlencode($account), $link->template);
-        //FIXME: mark insecure when url isn't https
-        $react->userXrd = $this->loadXrd($userUrl);
+        if (substr($userUrl, 0, 8) != 'https://') {
+            $react->secure = false;
+            //TODO: XML signature verification once supported by XML_XRD
+        }
+        $react->userXrd = $this->loadXrd($userUrl, $react);
+        if (!$react->userXrd->describes($account)) {
+            $react->secure = false;
+        }
 
         return $react;
     }
@@ -47,11 +86,12 @@ class Net_WebFinger
     /**
      * Loads the XRD file from the given URL.
      *
-     * @param string $url URL to fetch
+     * @param string $url   URL to fetch
+     * @param object $react Reaction object to store error in
      *
      * @return XML_XRD XRD object, null if it could not be loaded
      */
-    protected function loadXrd($url)
+    protected function loadXrd($url, Net_WebFinger_Reaction $react)
     {
         try {
             $xrd = new XML_XRD();
@@ -60,7 +100,7 @@ class Net_WebFinger
             $xrd->loadFile($url);
             return $xrd;
         } catch (Exception $e) {
-            //FIXME: what to do with the exception?
+            $react->error = $e->getMessage();
             return null;
         }
     }

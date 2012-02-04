@@ -6,7 +6,7 @@ Usage: $argv[0] user@example.com
 TXT;
     exit(1);
 }
-$email = $argv[1];
+$identifier = $argv[1];
 
 if (is_dir(__DIR__ . '/../src/')) {
     set_include_path(
@@ -16,10 +16,10 @@ if (is_dir(__DIR__ . '/../src/')) {
 require_once 'Net/WebFinger.php';
 
 
-echo 'Discovering ' . $email . "\n";
+echo 'Discovering ' . $identifier . "\n";
 
 $wf = new Net_WebFinger();
-$res = $wf->finger($email);
+$res = $wf->finger($identifier);
 
 echo 'Information secure? ' . var_export($res->secure, true) . "\n";
 
