@@ -69,10 +69,32 @@ class Net_WebFinger
     {
         $identifier = strtolower($identifier);
         $host       = substr($identifier, strpos($identifier, '@') + 1);
-        $account    = 'acct:' . $identifier;
 
         $react = new Net_WebFinger_Reaction($identifier);
 
+        if (!$this->loadHostMeta($react, $host)) {
+            return $react;
+        }
+
+        $this->loadLrdd($react, $identifier, $react->hostMetaXrd);
+        return $react;
+    }
+
+    /**
+     * Load the host's .well-known/host-meta XRD file.
+     *
+     * The XRD is stored in the reaction object's $hostMetaXrd property,
+     * and any error that is encountered in its $error property.
+     *
+     * When the XRD file cannot be loaded, this method returns false.
+     *
+     * @param object $react Reaction object to fill
+     * @param string $host  Hostname to fetch host-meta file from
+     *
+     * @return boolean True if the host-meta file could be loaded
+     */
+    protected function loadHostMeta(Net_WebFinger_Reaction $react, $host)
+    {
         $xrd = $this->loadXrd('https://' . $host . '/.well-known/host-meta', $react);
         if (!$xrd) {
             $xrd = $this->loadXrd(
@@ -86,22 +108,43 @@ class Net_WebFinger
                     Net_WebFinger_Error::NO_HOSTMETA,
                     $react->error
                 );
-                return $react;
+                return false;
             }
         }
         $react->hostMetaXrd = $xrd;
         $react->secure = (bool)($react->secure & $xrd->describes($host));
 
-        $link = $xrd->get('lrdd', 'application/xrd+xml');
+        return true;
+    }
+
+    /**
+     * Loads the user XRD file for a given identifier
+     *
+     * The XRD is stored in the reaction object's $userXrd property,
+     * any error is stored in its $error property.
+     *
+     * When loading of the file fails, false is returned.
+     *
+     * @param object $react      Reaction object to fill
+     * @param string $identifier E-mail address like identifier ("user@host")
+     * @param object $hostMeta   host-meta XRD object
+     *
+     * @return boolean True when the user XRD could be loaded, false if not
+     */
+    protected function loadLrdd(
+        Net_WebFinger_Reaction $react, $identifier, XML_XRD $hostMeta
+    ) {
+        $link = $hostMeta->get('lrdd', 'application/xrd+xml');
         if ($link === null || !$link->template) {
             $react->error = new Net_WebFinger_Error(
                 'No lrdd link for ' . $host,
                 Net_WebFinger_Error::NO_LRDD_LINK,
                 $react->error
             );
-            return $react;
+            return false;
         }
 
+        $account = 'acct:' . $identifier;
         $userUrl = str_replace('{uri}', urlencode($account), $link->template);
 
         $react->userXrd = $this->loadXrd($userUrl, $react);
@@ -110,15 +153,19 @@ class Net_WebFinger
             $userUrl = 'http://' . substr($userUrl, 8);
             $react->userXrd = $this->loadXrd($userUrl, $react);
         }
+        if (!$react->userXrd) {
+            return false;
+        }
+
         if (!$this->isHttps($userUrl)) {
             $react->secure = false;
             //TODO: XML signature verification once supported by XML_XRD
         }
-        if ($react->userXrd && !$react->userXrd->describes($account)) {
+        if (!$react->userXrd->describes($account)) {
             $react->secure = false;
         }
 
-        return $react;
+        return true;
     }
 
     /**
