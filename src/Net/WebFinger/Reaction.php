@@ -16,6 +16,37 @@
  *
  * Returned by Net_WebFinger::finger().
  *
+ * Usage examples:
+ *
+ * Check if the data have been exchanged in a secure manner:
+ * <code>
+ * if (!$react->secure) {
+ *     die("Be suspicious! Data may not be trusted.\n");
+ * }
+ * </code>
+ *
+ * Get the OpenID of the user:
+ * <code>
+ * if ($react->openid) {
+ *     echo 'The user\'s OpenID is ' . $react->openid . "\n";
+ * }
+ * </code>
+ *
+ * Other short names are
+ *
+ * - contacts (Portable Contacts)
+ * - hcard
+ * - profile
+ * - xfn
+ *
+ * Access any relation by their URL:
+ * <code>
+ * $foo = $react->get('http://this.is.some.foo/#spec');
+ * if ($foo !== null) {
+ *     //do something
+ * }
+ * </code>
+ *
  * @category Networking
  * @package  Net_WebFinger
  * @author   Christian Weiske <cweiske@php.net>
@@ -29,6 +60,7 @@ class Net_WebFinger_Reaction
      * .well-known/host-meta XRD object
      *
      * @var XML_XRD
+     * @see $userXrd
      */
     public $hostMetaXrd;
 
@@ -36,6 +68,7 @@ class Net_WebFinger_Reaction
      * User LRDD XRD file
      *
      * @var XML_XRD
+     * @see $hostMetaXrd
      */
     public $userXrd;
 
