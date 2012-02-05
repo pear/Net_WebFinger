@@ -11,7 +11,7 @@
  * @link     http://pear.php.net/package/Net_WebFinger
  */
 
-require_once 'HTTP/Request2.php';
+require_once 'Net/WebFinger/Error.php';
 require_once 'Net/WebFinger/Reaction.php';
 require_once 'XML/XRD.php';
 
@@ -81,7 +81,11 @@ class Net_WebFinger
             //TODO: XML signature verification once supported by XML_XRD
             $react->secure = false;
             if (!$xrd) {
-                $react->error = 'No .well-known/host-meta for ' . $host;
+                $react->error = new Net_WebFinger_Error(
+                    'No .well-known/host-meta for ' . $host,
+                    Net_WebFinger_Error::NO_HOSTMETA,
+                    $react->error
+                );
                 return $react;
             }
         }
@@ -90,7 +94,11 @@ class Net_WebFinger
 
         $link = $xrd->get('lrdd', 'application/xrd+xml');
         if ($link === null || !$link->template) {
-            $react->error = 'No lrdd template for ' . $host;
+            $react->error = new Net_WebFinger_Error(
+                'No lrdd link for ' . $host,
+                Net_WebFinger_Error::NO_LRDD_LINK,
+                $react->error
+            );
             return $react;
         }
 
@@ -148,7 +156,7 @@ class Net_WebFinger
 
             return $xrd;
         } catch (Exception $e) {
-            $react->error = $e->getMessage();
+            $react->error = $e;
             return null;
         }
     }

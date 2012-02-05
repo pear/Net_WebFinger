@@ -24,7 +24,11 @@ $res = $wf->finger($identifier);
 echo 'Information secure? ' . var_export($res->secure, true) . "\n";
 
 if ($res->error !== null) {
-    echo 'Error: ' . $res->error . "\n";
+    echo 'Error: ' . $res->error->getMessage() . "\n";
+    if ($res->error->getPrevious()) {
+        echo ' Underlying error: '
+            . trim($res->error->getPrevious()->getMessage()) . "\n";
+    }
 }
 
 if ($res->openid === null) {

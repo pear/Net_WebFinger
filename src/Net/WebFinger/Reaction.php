@@ -73,9 +73,23 @@ class Net_WebFinger_Reaction
     public $userXrd;
 
     /**
-     * Message describing the error that occured during fingering
+     * Message describing the error that occured during fingering.
      *
-     * @var string
+     * When no error happened, this variable is NULL.
+     *
+     * A webfinger error object is an exception, so you can use
+     * <code>$react->error->getMessage()</code> to get the error.
+     *
+     * To get the reason for the error, an error object may have an encapsulated
+     * exception:
+     * <code>
+     * if ($react->error->getPrevious()) {
+     *     echo 'Reason for this error: '
+     *     . $react->error->getPrevious()->getMessage()) . "\n";
+     * }
+     * </code>
+     *
+     * @var Net_WebFinger_Error
      */
     public $error;
 
