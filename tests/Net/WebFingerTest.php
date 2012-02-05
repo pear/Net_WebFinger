@@ -69,7 +69,9 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         );
 
         $react = $wf->finger('user@example.org');
-        $this->assertEquals('No .well-known/host-meta for example.org', $react->error);
+        $this->assertEquals(
+            'No .well-known/host-meta for example.org', $react->error->getMessage()
+        );
     }
 
     public function testFingerFetchesHostMetaHttpFallback()
@@ -134,7 +136,9 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
             ->will($this->returnValue(new XML_XRD()));
 
         $react = $wf->finger('user@example.org');
-        $this->assertEquals('No lrdd template for example.org', $react->error);
+        $this->assertEquals(
+            'No lrdd link in host-meta for example.org', $react->error->getMessage()
+        );
     }
 
 
@@ -267,7 +271,9 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         $wf = new Net_WebFinger();
         $wf->setHttpClient($req);
         $react = $wf->finger('foo@example.org');
-        $this->assertEquals('No lrdd template for example.org', $react->error);
+        $this->assertEquals(
+            'No lrdd link in host-meta for example.org', $react->error->getMessage()
+        );
     }
 
 
@@ -282,7 +288,8 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         $wf->setHttpClient($req);
         $react = $wf->finger('foo@example.org');
         $this->assertEquals(
-            'No .well-known/host-meta for example.org', $react->error
+            'No .well-known/host-meta for example.org',
+            $react->error->getMessage()
         );
     }
 

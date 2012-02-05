@@ -76,7 +76,7 @@ class Net_WebFinger
             return $react;
         }
 
-        $this->loadLrdd($react, $identifier, $react->hostMetaXrd);
+        $this->loadLrdd($react, $identifier, $host, $react->hostMetaXrd);
         return $react;
     }
 
@@ -127,17 +127,18 @@ class Net_WebFinger
      *
      * @param object $react      Reaction object to fill
      * @param string $identifier E-mail address like identifier ("user@host")
+     * @param string $host       Hostname of $identifier
      * @param object $hostMeta   host-meta XRD object
      *
      * @return boolean True when the user XRD could be loaded, false if not
      */
     protected function loadLrdd(
-        Net_WebFinger_Reaction $react, $identifier, XML_XRD $hostMeta
+        Net_WebFinger_Reaction $react, $identifier, $host, XML_XRD $hostMeta
     ) {
         $link = $hostMeta->get('lrdd', 'application/xrd+xml');
         if ($link === null || !$link->template) {
             $react->error = new Net_WebFinger_Error(
-                'No lrdd link for ' . $host,
+                'No lrdd link in host-meta for ' . $host,
                 Net_WebFinger_Error::NO_LRDD_LINK,
                 $react->error
             );
