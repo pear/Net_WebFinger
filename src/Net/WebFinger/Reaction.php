@@ -122,6 +122,26 @@ class Net_WebFinger_Reaction
     );
 
     /**
+     * Check if a given short name exists.
+     *
+     * If it exists, you can use e.g. <code>$react->openid</code> to get
+     * the openid URL.
+     * Note that this only checks if the short variable name exists, not
+     * if the variable has a value.
+     *
+     * @param string $variable Requested class variable
+     *
+     * @return boolean True if it exists
+     *
+     * @see $shortNameMap
+     * @see __get()
+     */
+    public function __isset($variable)
+    {
+        return isset(self::$shortNameMap[$variable]);
+    }
+
+    /**
      * Easy property access to common link relations.
      *
      * @param string $variable Requested class variable
@@ -130,6 +150,7 @@ class Net_WebFinger_Reaction
      *
      * @see $shortNameMap
      * @see get()
+     * @see __isset()
      */
     public function __get($variable)
     {
@@ -137,7 +158,6 @@ class Net_WebFinger_Reaction
             return null;
         }
         return $this->get(self::$shortNameMap[$variable]);
-        //FIXME: implement isset()
     }
 
     /**
@@ -176,6 +196,8 @@ class Net_WebFinger_Reaction
      * @return XML_XRD_Element_Link Link object or NULL if none found
      *
      * @see get()
+     * @see $userXrd
+     * @see $hostMetaXrd
      */
     public function getLink($rel, $type = null, $typeFallback = true)
     {

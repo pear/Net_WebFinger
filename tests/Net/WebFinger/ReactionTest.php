@@ -15,6 +15,13 @@ class Net_WebFinger_ReactionTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('http://example.org/xfn.htm', $react->xfn);
     }
 
+    public function test__isset()
+    {
+        $react = new Net_WebFinger_Reaction();
+        $this->assertTrue(isset($react->openid));
+        $this->assertFalse(isset($react->doesnotexist));
+    }
+
     public function test__getUnknownShortname()
     {
         $react = new Net_WebFinger_Reaction();
