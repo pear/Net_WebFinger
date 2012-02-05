@@ -243,5 +243,58 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
             'Host and XRD subject do not match, should not be secure anymore'
         );
     }
+
+    public function testSetHttpClient()
+    {
+        $req = new HTTP_Request2();
+        $adapter = new HTTP_Request2_Adapter_Mock();
+        $adapter->addResponse(
+            implode(
+                "\r\n",
+                array(
+                    'HTTP/1.1 200 OK',
+                    'Content-Type: application/xrd+xml',
+                    'Connection: close',
+                    '',
+                    '<?xml version="1.0"?>',
+                    '<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">',
+                    '</XRD>'
+                )
+            )
+        );
+        $req->setAdapter($adapter);
+
+        $wf = new Net_WebFinger();
+        $wf->setHttpClient($req);
+        $react = $wf->finger('foo@example.org');
+        $this->assertEquals('No lrdd template for example.org', $react->error);
+    }
+
+
+    public function testLoadXrdExceptionHandling()
+    {
+        $req = new HTTP_Request2();
+        $adapter = new HTTP_Request2_Adapter_Mock();
+        $adapter->addResponse(new HTTP_Request2_Exception('Fire in the tree!'));
+        $req->setAdapter($adapter);
+
+        $wf = new Net_WebFinger();
+        $wf->setHttpClient($req);
+        $react = $wf->finger('foo@example.org');
+        $this->assertEquals(
+            'No .well-known/host-meta for example.org', $react->error
+        );
+    }
+
+
+    public function testLoadXrdNoHttpClient()
+    {
+        $wf = new Net_WebFinger();
+        $rm = new ReflectionMethod($wf, 'loadXrd');
+        $rm->setAccessible(true);
+        $xrd = $rm->invoke($wf, __DIR__ . '/../subject.xrd', new Net_WebFinger_Reaction());
+        $this->assertInstanceOf('XML_XRD', $xrd);
+        $this->assertEquals('23.42.net', $xrd->subject);
+    }
 }
 ?>
