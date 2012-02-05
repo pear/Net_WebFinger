@@ -11,6 +11,7 @@
  * @link     http://pear.php.net/package/Net_WebFinger
  */
 
+require_once 'HTTP/Request2.php';
 require_once 'Net/WebFinger/Reaction.php';
 require_once 'XML/XRD.php';
 
@@ -35,6 +36,28 @@ require_once 'XML/XRD.php';
  */
 class Net_WebFinger
 {
+    /**
+     * HTTP client to use.
+     *
+     * @var HTTP_Request2
+     */
+    protected $httpClient;
+
+    /**
+     * Set a HTTP client object that's used to fetch URLs.
+     *
+     * Useful to set an own user agent.
+     *
+     * @param object $httpClient HTTP_Request2 instance
+     *
+     * @return void
+     */
+    public function setHttpClient(HTTP_Request2 $httpClient)
+    {
+        $this->httpClient = $httpClient;
+    }
+
+
     /**
      * Finger a email address like identifier - get information about it.
      *
@@ -101,9 +124,15 @@ class Net_WebFinger
     {
         try {
             $xrd = new XML_XRD();
-            //FIXME: use HTTP_Request2
             //FIXME: caching
-            $xrd->loadFile($url);
+            if ($this->httpClient !== null) {
+                $this->httpClient->setUrl($url);
+                $this->httpClient->setHeader('accept', 'application/xrd+xml', true);
+                $xrd->loadString($this->httpClient->send()->getBody());
+            } else {
+                $xrd->loadFile($url);
+            }
+
             return $xrd;
         } catch (Exception $e) {
             $react->error = $e->getMessage();
