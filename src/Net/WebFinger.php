@@ -71,12 +71,18 @@ class Net_WebFinger
         }
 
         $userUrl = str_replace('{uri}', urlencode($account), $link->template);
-        if (substr($userUrl, 0, 8) != 'https://') {
+        $userHttps = substr($userUrl, 0, 8) == 'https://';
+        if (!$userHttps) {
             $react->secure = false;
             //TODO: XML signature verification once supported by XML_XRD
         }
         $react->userXrd = $this->loadXrd($userUrl, $react);
-        if (!$react->userXrd->describes($account)) {
+        if ($react->userXrd === null && $userHttps) {
+            //fall back to HTTP
+            $userUrl = 'http://' . substr($userUrl, 8);
+            $react->userXrd = $this->loadXrd($userUrl, $react);
+        }
+        if ($react->userXrd && !$react->userXrd->describes($account)) {
             $react->secure = false;
         }
 
