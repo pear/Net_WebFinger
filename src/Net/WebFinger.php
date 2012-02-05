@@ -90,7 +90,8 @@ class Net_WebFinger
 
         $link = $xrd->get('lrdd', 'application/xrd+xml');
         if ($link === null || !$link->template) {
-            $react->error = 'No lrdd template';
+            $react->error = 'No lrdd template for ' . $host;
+            return $react;
         }
 
         $userUrl = str_replace('{uri}', urlencode($account), $link->template);
