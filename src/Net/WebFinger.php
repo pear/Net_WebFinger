@@ -61,9 +61,13 @@ class Net_WebFinger
     /**
      * Finger a email address like identifier - get information about it.
      *
+     * If an error occurs, you find it in the reaction's $error property.
+     *
      * @param string $identifier E-mail address like identifier ("user@host")
      *
      * @return Net_WebFinger_Reaction Reaction object
+     *
+     * @see Net_WebFinger_Reaction::$error
      */
     public function finger($identifier)
     {
@@ -92,6 +96,9 @@ class Net_WebFinger
      * @param string $host  Hostname to fetch host-meta file from
      *
      * @return boolean True if the host-meta file could be loaded
+     *
+     * @see Net_WebFinger_Reaction::$hostMetaXrd
+     * @see Net_WebFinger_Reaction::$error
      */
     protected function loadHostMeta(Net_WebFinger_Reaction $react, $host)
     {
@@ -131,6 +138,9 @@ class Net_WebFinger
      * @param object $hostMeta   host-meta XRD object
      *
      * @return boolean True when the user XRD could be loaded, false if not
+     *
+     * @see Net_WebFinger_Reaction::$hostMetaXrd
+     * @see Net_WebFinger_Reaction::$error
      */
     protected function loadLrdd(
         Net_WebFinger_Reaction $react, $identifier, $host, XML_XRD $hostMeta
