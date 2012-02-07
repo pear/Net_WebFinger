@@ -102,6 +102,16 @@ class Net_WebFinger
         return $react;
     }
 
+    /**
+     * Load the host's .well-known/host-meta XRD file and caches it.
+     *
+     * @param object $react Reaction object to fill
+     * @param string $host  Hostname to fetch host-meta file from
+     *
+     * @return boolean True if the host-meta file could be loaded
+     *
+     * @see loadHostMeta()
+     */
     protected function loadHostMetaCached(Net_WebFinger_Reaction $react, $host)
     {
         if (!$this->cache) {
