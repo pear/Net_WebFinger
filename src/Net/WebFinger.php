@@ -44,6 +44,13 @@ class Net_WebFinger
     protected $httpClient;
 
     /**
+     * Cache object to use (PEAR Cache package).
+     *
+     * @var Cache
+     */
+    protected $cache;
+
+    /**
      * Set a HTTP client object that's used to fetch URLs.
      *
      * Useful to set an own user agent.
@@ -57,6 +64,17 @@ class Net_WebFinger
         $this->httpClient = $httpClient;
     }
 
+    /**
+     * Set a cache object that's used to buffer XRD files.
+     *
+     * @param Cache $cache PEAR cache object
+     *
+     * @return void
+     */
+    public function setCache(Cache $cache)
+    {
+        $this->cache = $cache;
+    }
 
     /**
      * Finger a email address like identifier - get information about it.
@@ -76,12 +94,49 @@ class Net_WebFinger
 
         $react = new Net_WebFinger_Reaction($identifier);
 
-        if (!$this->loadHostMeta($react, $host)) {
+        if (!$this->loadHostMetaCached($react, $host)) {
             return $react;
         }
 
         $this->loadLrdd($react, $identifier, $host, $react->hostMetaXrd);
         return $react;
+    }
+
+    protected function loadHostMetaCached(Net_WebFinger_Reaction $react, $host)
+    {
+        if (!$this->cache) {
+            return $this->loadHostMeta($react, $host);
+        }
+
+        //FIXME: make $host secure, remove / and so
+        $cacheId     = 'hostmeta-' . $host;
+        $cacheRetval = $this->cache->get($cacheId);
+        if ($cacheRetval === null) {
+            //no cache yet
+            $retval = $this->loadHostMeta($react, $host);
+            $data   = array(
+                'retval'      => $retval,
+                'hostMetaXrd' => $react->hostMetaXrd,
+                'error'       => $react->error,
+                'secure'      => $react->secure
+            );
+
+            //we do not implement http caching headers yet
+            //5 minutes expiry time by default
+            $expiry = '+300';
+            if ($react->hostMetaXrd && $react->hostMetaXrd->expires > time()) {
+                $expiry = $react->hostMetaXrd->expires;
+            }
+            $this->cache->save($cacheId, $data, $expiry);
+        } else {
+            //load from cache
+            $react->hostMetaXrd = $cacheRetval['hostMetaXrd'];
+            $react->error       = $cacheRetval['error'];
+            $react->secure      = $cacheRetval['secure'];
+            $retval             = $cacheRetval['retval'];
+        }
+
+        return $retval;
     }
 
     /**

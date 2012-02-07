@@ -1,10 +1,12 @@
 <?php
 require_once 'Net/WebFinger.php';
+
 require_once 'HTTP/Request2.php';
 require_once 'HTTP/Request2/Adapter/Mock.php';
 
 class Net_WebFingerTest extends PHPUnit_Framework_TestCase
 {
+
     protected function getHostMeta()
     {
         $xrd = new XML_XRD();
@@ -303,5 +305,6 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('XML_XRD', $xrd);
         $this->assertEquals('23.42.net', $xrd->subject);
     }
+
 }
 ?>
