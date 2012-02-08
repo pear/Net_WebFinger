@@ -4,10 +4,18 @@ Net_WebFinger
 
 A WebFinger implementation for PHP.
 
+Discover meta data about users by just their email address.
+Discoverable data may be the user's OpenID, profile page URL,
+link to portable contacts, hcard, foaf and other user pages.
 
-=======
-Example
-=======
+Distributed social networks use WebFinger to distribute public encryption keys,
+OStatus and Salmon URLs.
+
+.. contents::
+
+========
+Examples
+========
 
 OpenID discovery
 ================
@@ -22,30 +30,6 @@ OpenID discovery
         echo 'OpenID provider found: ' . $openIdProvider . "\n";
     }
     ?>
-
-
-Caching
-=======
-With caching, the retrieved files will be stored locally which leads to faster
-lookup times when the same identifier (email address) is loaded again, and when
-another identifier on the same host is retrieved.
-
-::
-
-    <?php
-    require_once 'Net/WebFinger.php';
-    require_once 'Cache.php';
-    $wf = new Net_WebFinger();
-    $wf->setCache(
-        new Cache('file', array('cache_dir' => sys_get_temp_dir() . '/myapp'))
-    );
-    $res = $wf->finger('user@example.org');
-    $openIdProvider = $res->get('http://specs.openid.net/auth/2.0/provider');
-    ?>
-
-PEAR's Cache_Lite package does not support per-item lifetimes, so we cannot
-use it: http://pear.php.net/bugs/bug.php?id=13297
-
 
 Simple access
 =============
@@ -62,11 +46,34 @@ names can be used to access them more easily::
     ?>
 
 
+
+Caching
+=======
+With caching, the retrieved host-meta files will be stored locally which leads
+to faster lookup times when the same identifier (email address) is loaded again,
+and when another identifier on the same host is retrieved.
+::
+
+    <?php
+    require_once 'Net/WebFinger.php';
+    require_once 'Cache.php';
+    $wf = new Net_WebFinger();
+    $wf->setCache(
+        new Cache('file', array('cache_dir' => sys_get_temp_dir() . '/myapp'))
+    );
+    $res = $wf->finger('user@example.org');
+    $openIdProvider = $res->get('http://specs.openid.net/auth/2.0/provider');
+    ?>
+
+Note: PEAR's Cache_Lite package does not support per-item lifetimes, so we cannot
+use it: http://pear.php.net/bugs/bug.php?id=13297
+
+
 XRD file access
 ===============
 Sometimes the simple API is not enough and you need more details.
 The result object gives you access to the ``.well-known/host-meta`` and user
-XRD file objects::
+XRD (LRDD) file objects::
 
     <?php
     require_once 'Net/WebFinger.php';
@@ -104,36 +111,59 @@ You should not trust the information if they are not secure.
     }
 
 
-====
-TODO
-====
-- Goal: Discover OpenID provider for email account
-- determine which urls may fall back to the host xrd (e.g. yahoo)
-- use openid-provider from host-meta xrd (yahoo)
-
-
 =======
 Testing
 =======
-- See test-mail
+You can use this identifiers to test the WebFinger functionality on various
+providers:
 
-- Myspace/facebook?
+- Gmail: evalpaul@gmail.com
+- Yahoo: mcorne@yahoo.com
+- AOL: M4dSquirrels@aol.com
+- other:
 
-==========
+  - cweiske@cweiske.de
+  - darron@froese.org https://github.com/intridea/redfinger/issues/2
+
+- diaspora: kevinkleinman@joindiaspora.com
+- status.net: singpolyma@identi.ca
+
+
+=====
+Links
+=====
+
 References
 ==========
 
-- IETF draft: http://www.ietf.org/id/draft-jones-appsawg-webfinger-00.txt
-- Specification: http://code.google.com/p/webfinger/wiki/WebFingerProtocol
-- Mailing list: http://groups.google.com/group/webfinger
-- Link relations: http://code.google.com/p/webfinger/wiki/CommonLinkRelations
+- `Webfinger mailing list`__
+- `First specification`__
+- `Common link relations`__
+- `IETF draft`__
 - http://hueniverse.com/2009/09/implementing-webfinger/
 - http://hueniverse.com/2009/09/openid-and-lrdd/
 - http://paulosman.me/2010/02/01/google-webfinger.html Google have since rolled out WebFinger support for everyone with a Google Profile.
-- Finger history: http://www.rajivshah.com/Case_Studies/Finger/Finger.htm
-- Ruby implementation: http://intridea.com/2010/2/12/redfinger-a-ruby-webfinger-gem
-- Perl implementation: http://search.cpan.org/~tobyink/WWW-Finger-0.101/lib/WWW/Finger/Webfinger.pm
-- XRD: http://docs.oasis-open.org/xri/xrd/v1.0/xrd-1.0.html
-- Wordpress plugin: http://blog.duthied.com/2011/08/30/webfinger-profile-plugin/
-   http://wordpress.org/extend/plugins/webfinger-profile/
-- PHP implementation: https://github.com/walkah/discovery-php
+- `Finger history`__
+- `XRD 1.0 specification`__ 
+
+__ http://groups.google.com/group/webfinger
+__ http://code.google.com/p/webfinger/wiki/WebFingerProtocol
+__ http://code.google.com/p/webfinger/wiki/CommonLinkRelations
+__ http://www.ietf.org/id/draft-jones-appsawg-webfinger-00.txt
+__ http://www.rajivshah.com/Case_Studies/Finger/Finger.htm
+__ http://docs.oasis-open.org/xri/xrd/v1.0/xrd-1.0.html
+
+
+Alternate implementations
+=========================
+
+- Ruby: Redfinger__
+- Perl: `WWW::Finger::Webfinger`__
+- PHP: discovery-php__ 
+- PHP Wordpress plugin: Blogpost__, `webfinger-profile plugin`__
+
+__ http://intridea.com/2010/2/12/redfinger-a-ruby-webfinger-gem
+__ http://search.cpan.org/~tobyink/WWW-Finger-0.101/lib/WWW/Finger/Webfinger.pm
+__ https://github.com/walkah/discovery-php
+__ http://blog.duthied.com/2011/08/30/webfinger-profile-plugin/
+__ http://wordpress.org/extend/plugins/webfinger-profile/

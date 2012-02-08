@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package version="2.0"
+ xmlns="http://pear.php.net/dtd/package-2.0"
+ xmlns:tasks="http://pear.php.net/dtd/tasks-1.0"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+  http://pear.php.net/dtd/tasks-1.0.xsd
+  http://pear.php.net/dtd/package-2.0
+  http://pear.php.net/dtd/package-2.0.xsd"
+>
+ <name>Net_WebFinger</name>
+ <channel>pear.php.net</channel>
+ <summary>A WebFinger implementation for PHP</summary>
+ <description>
+Discover meta data about users by just their email address.
+Discoverable data may be the user's OpenID, profile page URL,
+link to portable contacts, hcard, foaf and other user pages.
+
+Distributed social networks use WebFinger to distribute public encryption keys,
+OStatus and Salmon URLs.
+ </description>
+
+ <lead>
+  <name>Christian Weiske</name>
+  <user>cweiske</user>
+  <email>cweiske@php.net</email>
+  <active>yes</active>
+ </lead>
+
+ <date>2012-02-08</date>
+
+ <version>
+  <release>0.1.0</release>
+  <api>0.1.0</api>
+ </version>
+ <stability>
+  <release>alpha</release>
+  <api>alpha</api>
+ </stability>
+ <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
+
+ <notes>
+  - First public version
+ </notes>
+
+ <contents>
+  <dir name="/">
+   <file name="README.rst"            role="doc" />
+   <dir name="src">
+    <dir name="Net">
+     <file name="WebFinger.php"       role="php" install-as="Net/WebFinger.php" />
+     <dir name="WebFinger">
+      <file name="Error.php"          role="php" install-as="Net/WebFinger/Error.php" />
+      <file name="Reaction.php"       role="php" install-as="Net/WebFinger/Reaction.php" />
+     </dir>
+    </dir>
+   </dir><!-- /src -->
+   <dir name="examples">
+    <file name="webfinger-cli.php"    role="doc" />
+   </dir>
+   <dir name="tests">
+    <file name="subject.xrd"             role="test" />
+    <file name="phpunit.xml"             role="test" />
+    <dir name="Net">
+     <file name="WebFingerTest.php"      role="test" />
+     <file name="WebFingerCacheTest.php" role="test" />
+     <dir name="WebFinger">
+      <file name="ReactionTest.php"      role="test" />
+     </dir>
+    </dir>
+   </dir><!-- /tests -->
+  </dir>
+ </contents>
+
+ <dependencies>
+  <required>
+   <php>
+    <min>5.3.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.9.0</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+
+ <phprelease />
+ <changelog>
+
+  <release>
+   <version>
+    <release>0.1.0</release>
+    <api>0.1.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2012-02-08</date>
+   <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
+   <notes>
+    First public version
+   </notes>
+  </release>
+
+ </changelog>
+</package>
