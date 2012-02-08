@@ -10,7 +10,7 @@
 >
  <name>Net_WebFinger</name>
  <channel>pear.php.net</channel>
- <summary>A WebFinger implementation for PHP</summary>
+ <summary>WebFinger client library for PHP</summary>
  <description>
 Discover meta data about users by just their email address.
 Discoverable data may be the user's OpenID, profile page URL,

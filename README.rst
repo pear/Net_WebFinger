@@ -2,7 +2,7 @@
 Net_WebFinger
 *************
 
-A WebFinger implementation for PHP.
+WebFinger client library for PHP.
 
 Discover meta data about users by just their email address.
 Discoverable data may be the user's OpenID, profile page URL,
