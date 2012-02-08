@@ -80,7 +80,26 @@ OStatus and Salmon URLs.
    <pearinstaller>
     <min>1.9.0</min>
    </pearinstaller>
+
+   <package>
+    <name>XML_XRD</name>
+    <channel>pear.php.net</channel>
+    <min>0.1.0</min>
+   </package>
   </required>
+
+  <optional>
+   <package>
+    <name>Cache</name>
+    <channel>pear.php.net</channel>
+    <min>1.5.6</min>
+   </package>
+   <package>
+    <name>HTTP_Request2</name>
+    <channel>pear.php.net</channel>
+    <min>2.0.0</min>
+   </package>
+  </optional>
  </dependencies>
 
  <phprelease />
