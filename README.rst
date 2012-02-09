@@ -157,12 +157,17 @@ __ http://docs.oasis-open.org/xri/xrd/v1.0/xrd-1.0.html
 Alternate implementations
 =========================
 
-- Ruby: Redfinger__
+- Ruby:
+
+  - Redfinger__
+  - Webfinger__
+
 - Perl: `WWW::Finger::Webfinger`__
 - PHP: discovery-php__ 
 - PHP Wordpress plugin: Blogpost__, `webfinger-profile plugin`__
 
 __ http://intridea.com/2010/2/12/redfinger-a-ruby-webfinger-gem
+__ http://rubyforge.org/projects/webfinger/
 __ http://search.cpan.org/~tobyink/WWW-Finger-0.101/lib/WWW/Finger/Webfinger.pm
 __ https://github.com/walkah/discovery-php
 __ http://blog.duthied.com/2011/08/30/webfinger-profile-plugin/
