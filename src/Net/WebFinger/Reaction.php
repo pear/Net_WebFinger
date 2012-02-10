@@ -54,7 +54,7 @@
  * @link     http://pear.php.net/package/Net_WebFinger
  * @see      Net_WebFinger::finger()
  */
-class Net_WebFinger_Reaction
+class Net_WebFinger_Reaction implements IteratorAggregate
 {
     /**
      * .well-known/host-meta XRD object
@@ -226,6 +226,39 @@ class Net_WebFinger_Reaction
             return null;
         }
         return $this->hostMetaXrd->get($rel, $type, $typeFallback);
+    }
+
+    /**
+     * Return the iterator object to loop over the links.
+     *
+     * Part of the IteratorAggregate interface.
+     *
+     * @return Traversable Iterator for the links
+     */
+    public function getIterator()
+    {
+        $links = array();
+        $rels = array();
+        if ($this->userXrd !== null) {
+            $links = $this->userXrd->links;
+            foreach ($links as $link) {
+                $rels[$link->rel] = true;
+            }
+        }
+        if ($this->hostMetaXrd !== null) {
+            //add links from host-meta that are in the fallback map
+            // and whose relation does not exist yet
+            foreach ($this->hostMetaXrd as $link) {
+                if (!isset(self::$fallbackMap[$link->rel])
+                    || isset($rels[$link->rel])
+                ) {
+                    continue;
+                }
+                $links[] = $link;
+            }
+        }
+
+        return new ArrayIterator($links);
     }
 }
 

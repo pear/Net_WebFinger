@@ -78,6 +78,66 @@ class Net_WebFinger_ReactionTest extends PHPUnit_Framework_TestCase
         );
     }
 
+
+    public function testGetIterator()
+    {
+        $react = new Net_WebFinger_Reaction();
+        $react->userXrd = new XML_XRD();
+        $react->hostMetaXrd = new XML_XRD();
+
+        $react->hostMetaXrd->links[] = new XML_XRD_Element_Link(
+            'http://gmpg.org/xfn/11', 'http://example.org/xfn.htm'
+        );
+        $react->hostMetaXrd->links[] = new XML_XRD_Element_Link(
+            'http://specs.openid.net/auth/2.0/provider', 'http://example.org/id'
+        );
+
+        $react->userXrd->links[] = new XML_XRD_Element_Link(
+            'http://gmpg.org/xfn/11', 'http://example.org/user-xfn.htm'
+        );
+        $react->userXrd->links[] = new XML_XRD_Element_Link(
+            'http://specs.openid.net/auth/2.0/provider', 'http://example.org/user-id'
+        );
+
+        $links = array();
+        foreach ($react as $link) {
+            $links[] = $link;
+        }
+
+        $this->assertEquals(2, count($links), 'only links from userXrd should be here');
+    }
+
+    public function testGetIteratorFallbackHostMeta()
+    {
+        $react = new Net_WebFinger_Reaction();
+        $react->userXrd = new XML_XRD();
+        $react->hostMetaXrd = new XML_XRD();
+
+        $react->hostMetaXrd->links[] = new XML_XRD_Element_Link(
+            'http://gmpg.org/xfn/11', 'http://example.org/xfn.htm'
+        );
+        $react->hostMetaXrd->links[] = new XML_XRD_Element_Link(
+            'http://specs.openid.net/auth/2.0/provider', 'http://example.org/id'
+        );
+
+        $react->userXrd->links[] = new XML_XRD_Element_Link(
+            'http://gmpg.org/xfn/11', 'http://example.org/user-xfn.htm'
+        );
+
+        $links = array();
+        $idLink = false;
+        foreach ($react as $link) {
+            $links[] = $link;
+            if ($link->rel == 'http://specs.openid.net/auth/2.0/provider'
+                && $link->href == 'http://example.org/id'
+            ) {
+                $idLink = true;
+            }
+        }
+
+        $this->assertEquals(2, count($links));
+        $this->assertTrue($idLink, 'OpenID link from host-meta missing');
+    }
 }
 
 ?>

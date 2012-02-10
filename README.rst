@@ -24,27 +24,49 @@ OpenID discovery
     <?php
     require_once 'Net/WebFinger.php';
     $wf = new Net_WebFinger();
-    $res = $wf->finger('user@example.org');
-    $openIdProvider = $res->get('http://specs.openid.net/auth/2.0/provider');
+    $react = $wf->finger('user@example.org');
+    $openIdProvider = $react->get('http://specs.openid.net/auth/2.0/provider');
     if ($openIdProvider !== null) {
         echo 'OpenID provider found: ' . $openIdProvider . "\n";
     }
     ?>
 
-Simple access
-=============
+
+Simple link access
+==================
 Some common link relations have a short name in Net_WebFinger. Those short
 names can be used to access them more easily::
 
     <?php
     require_once 'Net/WebFinger.php';
     $wf  = new Net_WebFinger();
-    $res = $wf->finger('user@example.org');
-    if ($res->openid !== null) {
-        echo 'OpenID provider found: ' . $res->openid . "\n";
+    $react = $wf->finger('user@example.org');
+    if ($react->openid !== null) {
+        echo 'OpenID provider found: ' . $react->openid . "\n";
     }
     ?>
 
+Currently supported short names:
+
+- ``contacts``
+- ``hcard``
+- ``openid``
+- ``profile``
+- ``xfn``
+
+
+Accessing all links
+===================
+You can use ``foreach`` on the reaction object to get all links::
+
+    <?php
+    require_once 'Net/WebFinger.php';
+    $wf = new Net_WebFinger();
+    $react = $wf->finger('user@example.org');
+    foreach ($react as $link) {
+        echo 'Link: ' . $link->rel . ' to ' . $link->href . "\n";
+    }
+    ?>
 
 
 Caching
@@ -61,8 +83,8 @@ and when another identifier on the same host is retrieved.
     $wf->setCache(
         new Cache('file', array('cache_dir' => sys_get_temp_dir() . '/myapp'))
     );
-    $res = $wf->finger('user@example.org');
-    $openIdProvider = $res->get('http://specs.openid.net/auth/2.0/provider');
+    $react = $wf->finger('user@example.org');
+    $openIdProvider = $react->get('http://specs.openid.net/auth/2.0/provider');
     ?>
 
 Note: PEAR's Cache_Lite package does not support per-item lifetimes, so we cannot
@@ -78,12 +100,12 @@ XRD (LRDD) file objects::
     <?php
     require_once 'Net/WebFinger.php';
     $wf  = new Net_WebFinger();
-    $res = $wf->finger('user@example.org');
+    $react = $wf->finger('user@example.org');
 
-    $openIdLink = $res->userXrd->get('http://specs.openid.net/auth/2.0/provider');
+    $openIdLink = $react->userXrd->get('http://specs.openid.net/auth/2.0/provider');
     echo $openIdLink->getTitle('de') . ':' . $openIdLink->href . "\n";
 
-    foreach ($res->hostMetaXrd as $link) {
+    foreach ($react->hostMetaXrd as $link) {
         echo $link->rel . ': ' . $link->href . "\n";
     }
     ?>
@@ -105,8 +127,8 @@ You should not trust the information if they are not secure.
     <?php
     require_once 'Net/WebFinger.php';
     $wf  = new Net_WebFinger();
-    $res = $wf->finger('user@example.org');
-    if (!$res->secure) {
+    $react = $wf->finger('user@example.org');
+    if (!$react->secure) {
         die("Those data may not be trusted\n");
     }
 

@@ -19,28 +19,26 @@ require_once 'Net/WebFinger.php';
 echo 'Discovering ' . $identifier . "\n";
 
 $wf = new Net_WebFinger();
-$res = $wf->finger($identifier);
+$react = $wf->finger($identifier);
 
-echo 'Information secure? ' . var_export($res->secure, true) . "\n";
+echo 'Information secure? ' . var_export($react->secure, true) . "\n";
 
-if ($res->error !== null) {
-    echo 'Error: ' . $res->error->getMessage() . "\n";
-    if ($res->error->getPrevious()) {
+if ($react->error !== null) {
+    echo 'Error: ' . $react->error->getMessage() . "\n";
+    if ($react->error->getPrevious()) {
         echo ' Underlying error: '
-            . trim($res->error->getPrevious()->getMessage()) . "\n";
+            . trim($react->error->getPrevious()->getMessage()) . "\n";
     }
 }
 
-if ($res->openid === null) {
+if ($react->openid === null) {
     echo "No OpenID provider found\n";
 } else {
-    echo 'OpenID provider: ' . $res->openid . "\n";
+    echo 'OpenID provider: ' . $react->openid . "\n";
 }
 
-if ($res->userXrd) {
-    foreach ($res->userXrd as $link) {
-        echo 'Link: ' . $link->rel . ': ' . ($link->href ? $link->href : $link->template) . "\n";
-    }
+foreach ($react as $link) {
+    echo 'Link: ' . $link->rel . ': ' . ($link->href ? $link->href : $link->template) . "\n";
 }
 
 ?>
