@@ -59,6 +59,7 @@ OStatus and Salmon URLs.
     <file name="webfinger-cli.php"    role="doc" />
    </dir>
    <dir name="tests">
+    <file name="AllTests.php"            role="test" />
     <file name="subject.xrd"             role="test" />
     <file name="phpunit.xml"             role="test" />
     <dir name="Net">
