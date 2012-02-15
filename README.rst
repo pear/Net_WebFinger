@@ -133,6 +133,30 @@ You should not trust the information if they are not secure.
     }
 
 
+Custom HTTP adapter
+===================
+By default, the HTTP(S) XRD files are loaded by XML_XRD internally using
+``simplexml_load_file``, which emits PHP Warnings when the files are not found
+or other HTTP errors occur.
+
+To work around that limitation, or to set some custom HTTP request headers,
+you may use an own HTTP adapter that's used to fetch the files::
+
+
+    <?php
+    require_once 'HTTP/Request2.php';
+    require_once 'Net/WebFinger.php';
+
+    $req = new HTTP_Request2();
+    $req->setConfig('follow_redirects', true);//needed for full compatibility
+    $req->setHeader('User-Agent', 'MyApp 1.42');
+
+    $wf = new Net_WebFinger();
+    $wf->setHttpClient($req);
+    $react = $wf->finger('foo@example.org');
+
+
+
 =======
 Testing
 =======
