@@ -57,6 +57,7 @@ OStatus and Salmon URLs.
    </dir><!-- /src -->
    <dir name="examples">
     <file name="webfinger-cli.php"    role="doc" />
+    <file name="custom-http-adapter.php" role="doc" />
    </dir>
    <dir name="tests">
     <file name="AllTests.php"            role="test" />
