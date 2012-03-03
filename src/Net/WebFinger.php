@@ -167,11 +167,23 @@ class Net_WebFinger
      */
     protected function loadHostMeta(Net_WebFinger_Reaction $react, $host)
     {
+        /**
+         * HTTPS is secure.
+         * xrd->describes() may not be used because the host-meta should not
+         * have a subject at all: http://tools.ietf.org/html/rfc6415#section-3.1
+         * > The document SHOULD NOT include a "Subject" element, as at this
+         * > time no URI is available to identify hosts.
+         * > The use of the "Alias" element in host-meta is undefined and
+         * > NOT RECOMMENDED.
+         */
+        $react->secure = true;
+
         $xrd = $this->loadXrd('https://' . $host . '/.well-known/host-meta', $react);
         if (!$xrd) {
             $xrd = $this->loadXrd(
                 'http://' . $host . '/.well-known/host-meta', $react
             );
+            //no https, so not secure
             //TODO: XML signature verification once supported by XML_XRD
             $react->secure = false;
             if (!$xrd) {
@@ -184,7 +196,6 @@ class Net_WebFinger
             }
         }
         $react->hostMetaXrd = $xrd;
-        $react->secure = (bool)($react->secure & $xrd->describes($host));
 
         return true;
     }
