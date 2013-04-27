@@ -13,13 +13,12 @@
 
 require_once 'Net/WebFinger/Error.php';
 require_once 'Net/WebFinger/Reaction.php';
-require_once 'XML/XRD.php';
 
 /**
  * PHP WebFinger client. Performs discovery and returns a result.
  *
- * At first, the account's host's .well-known/host-meta file is fetched,
- * then the file indicated by the "lrdd" type.
+ * Fetches the well-known URI
+ * https://example.org/.well-known/webfinger?resource=acct:user@example.org
  *
  * <code>
  * require_once 'Net/WebFinger.php';
@@ -36,6 +35,15 @@ require_once 'XML/XRD.php';
  */
 class Net_WebFinger
 {
+    /**
+     * Retry with HTTP if the HTTPS request fails.
+     * This is not allowed by the webfinger specification, but may be
+     * helpful during development.
+     *
+     * @var boolean
+     */
+    public $fallbackToHttp = false;
+
     /**
      * HTTP client to use.
      *
@@ -92,171 +100,55 @@ class Net_WebFinger
         $identifier = strtolower($identifier);
         $host       = substr($identifier, strpos($identifier, '@') + 1);
 
-        $react = new Net_WebFinger_Reaction($identifier);
-
-        if (!$this->loadHostMetaCached($react, $host)) {
-            return $react;
-        }
-
-        $this->loadLrdd($react, $identifier, $host, $react->hostMetaXrd);
-        return $react;
+        return $this->loadInfo($identifier, $host);
     }
 
     /**
-     * Load the host's .well-known/host-meta XRD file and caches it.
-     *
-     * @param object $react Reaction object to fill
-     * @param string $host  Hostname to fetch host-meta file from
-     *
-     * @return boolean True if the host-meta file could be loaded
-     *
-     * @see loadHostMeta()
-     */
-    protected function loadHostMetaCached(Net_WebFinger_Reaction $react, $host)
-    {
-        if (!$this->cache) {
-            return $this->loadHostMeta($react, $host);
-        }
-
-        //FIXME: make $host secure, remove / and so
-        $cacheId     = 'hostmeta-' . $host;
-        $cacheRetval = $this->cache->get($cacheId);
-        if ($cacheRetval === null) {
-            //no cache yet
-            $retval = $this->loadHostMeta($react, $host);
-            $data   = array(
-                'retval'      => $retval,
-                'hostMetaXrd' => $react->hostMetaXrd,
-                'error'       => $react->error,
-                'secure'      => $react->secure
-            );
-
-            //we do not implement http caching headers yet
-            //5 minutes expiry time by default
-            $expiry = '+300';
-            if ($react->hostMetaXrd && $react->hostMetaXrd->expires > time()) {
-                $expiry = $react->hostMetaXrd->expires;
-            }
-            $this->cache->save($cacheId, $data, $expiry);
-        } else {
-            //load from cache
-            $react->hostMetaXrd = $cacheRetval['hostMetaXrd'];
-            $react->error       = $cacheRetval['error'];
-            $react->secure      = $cacheRetval['secure'];
-            $retval             = $cacheRetval['retval'];
-        }
-
-        return $retval;
-    }
-
-    /**
-     * Load the host's .well-known/host-meta XRD file.
-     *
-     * The XRD is stored in the reaction object's $hostMetaXrd property,
-     * and any error that is encountered in its $error property.
-     *
-     * When the XRD file cannot be loaded, this method returns false.
-     *
-     * @param object $react Reaction object to fill
-     * @param string $host  Hostname to fetch host-meta file from
-     *
-     * @return boolean True if the host-meta file could be loaded
-     *
-     * @see Net_WebFinger_Reaction::$hostMetaXrd
-     * @see Net_WebFinger_Reaction::$error
-     */
-    protected function loadHostMeta(Net_WebFinger_Reaction $react, $host)
-    {
-        /**
-         * HTTPS is secure.
-         * xrd->describes() may not be used because the host-meta should not
-         * have a subject at all: http://tools.ietf.org/html/rfc6415#section-3.1
-         * > The document SHOULD NOT include a "Subject" element, as at this
-         * > time no URI is available to identify hosts.
-         * > The use of the "Alias" element in host-meta is undefined and
-         * > NOT RECOMMENDED.
-         */
-        $react->secure = true;
-
-        $xrd = $this->loadXrd('https://' . $host . '/.well-known/host-meta', $react);
-        if (!$xrd) {
-            $xrd = $this->loadXrd(
-                'http://' . $host . '/.well-known/host-meta', $react
-            );
-            //no https, so not secure
-            //TODO: XML signature verification once supported by XML_XRD
-            $react->secure = false;
-            if (!$xrd) {
-                $react->error = new Net_WebFinger_Error(
-                    'No .well-known/host-meta for ' . $host,
-                    Net_WebFinger_Error::NO_HOSTMETA,
-                    $react->error
-                );
-                return false;
-            }
-        }
-        $react->hostMetaXrd = $xrd;
-
-        return true;
-    }
-
-    /**
-     * Loads the user XRD file for a given identifier
-     *
-     * The XRD is stored in the reaction object's $userXrd property,
-     * any error is stored in its $error property.
+     * Loads the user JRD file for a given identifier
      *
      * When loading of the file fails, false is returned.
      *
-     * @param object $react      Reaction object to fill
      * @param string $identifier E-mail address like identifier ("user@host")
      * @param string $host       Hostname of $identifier
-     * @param object $hostMeta   host-meta XRD object
      *
-     * @return boolean True when the user XRD could be loaded, false if not
+     * @return Net_WebFinger_Reaction Reaction object with user and error
+     *                                information
      *
-     * @see Net_WebFinger_Reaction::$hostMetaXrd
      * @see Net_WebFinger_Reaction::$error
      */
-    protected function loadLrdd(
-        Net_WebFinger_Reaction $react, $identifier, $host, XML_XRD $hostMeta
-    ) {
-        $link = $hostMeta->get('lrdd', 'application/xrd+xml');
-        if ($link === null || !$link->template) {
-            $react->error = new Net_WebFinger_Error(
-                'No lrdd link in host-meta for ' . $host,
-                Net_WebFinger_Error::NO_LRDD_LINK,
-                $react->error
-            );
-            return false;
-        }
-
+    protected function loadInfo($identifier, $host)
+    {
         $account = 'acct:' . $identifier;
-        $userUrl = str_replace('{uri}', urlencode($account), $link->template);
+        $userUrl = 'https://' . $host . '/.well-known/webfinger?resource='
+            . urlencode($account);
 
-        $react->userXrd = $this->loadXrd($userUrl, $react);
-        if ($react->userXrd === null && $this->isHttps($userUrl)) {
+        $react = new Net_WebFinger_Reaction();
+        $this->loadXrd($userUrl, $react);
+
+        if ($this->fallbackToHttp && $react->error !== null
+            && $this->isHttps($userUrl)
+        ) {
             //fall back to HTTP
+            $react->error = null;
             $userUrl = 'http://' . substr($userUrl, 8);
-            $react->userXrd = $this->loadXrd($userUrl, $react);
+            $this->loadXrd($userUrl, $react);
         }
-        if (!$react->userXrd) {
-            return false;
+        if (!$react->error !== null) {
+            return $react;
         }
 
         if (!$this->isHttps($userUrl)) {
             $react->secure = false;
-            //TODO: XML signature verification once supported by XML_XRD
         }
-        if (!$react->userXrd->describes($account)) {
+        if (!$react->describes($account)) {
             $react->secure = false;
         }
 
-        return true;
+        return $react;
     }
 
     /**
-     * Check wether the URL is an HTTPS url.
+     * Check whether the URL is an HTTPS URL.
      *
      * @param string $url URL to check
      *
@@ -273,25 +165,22 @@ class Net_WebFinger
      * @param string $url   URL to fetch
      * @param object $react Reaction object to store error in
      *
-     * @return XML_XRD XRD object, null if it could not be loaded
+     * @return boolean True if loading data succeeded, false if not
      */
     protected function loadXrd($url, Net_WebFinger_Reaction $react)
     {
         try {
-            $xrd = new XML_XRD();
-            //FIXME: caching
             if ($this->httpClient !== null) {
                 $this->httpClient->setUrl($url);
-                $this->httpClient->setHeader('accept', 'application/xrd+xml', true);
-                $xrd->loadString($this->httpClient->send()->getBody());
+                $this->httpClient->setHeader('accept', 'application/jrd+json', true);
+                $react->loadString($this->httpClient->send()->getBody(), 'json');
             } else {
-                $xrd->loadFile($url);
+                $react->loadFile($url, 'json');
             }
-
-            return $xrd;
+            return true;
         } catch (Exception $e) {
             $react->error = $e;
-            return null;
+            return false;
         }
     }
 
