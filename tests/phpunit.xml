@@ -2,6 +2,7 @@
 <phpunit>
  <php>
   <includePath>../src/</includePath>
+  <includePath>../tests/</includePath>
  </php>
  <filter>
   <whitelist addUncoveredFilesFromWhitelist="true">

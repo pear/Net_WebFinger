@@ -2,302 +2,197 @@
 require_once 'Net/WebFinger.php';
 
 require_once 'HTTP/Request2.php';
-require_once 'HTTP/Request2/Adapter/Mock.php';
+require_once 'HTTP_Request2_Adapter_LogMock.php';
 
 class Net_WebFingerTest extends PHPUnit_Framework_TestCase
 {
+    /**
+     * @var HTTP_Request2_Adapter_Mock
+     */
+    protected $adapter;
 
-    protected function getHostMeta()
+    public function setUp()
     {
-        $xrd = new XML_XRD();
-        $xrd->subject = 'example.org';
-        $xrd->links[0] = new XML_XRD_Element_Link();
-        $xrd->links[0]->rel = 'lrdd';
-        $xrd->links[0]->template = 'https://example.org/lrdd?acct={uri}';
-        return $xrd;
+        $this->wf = new Net_WebFinger();
+        $this->addHttpMock($this->wf);
     }
 
-    protected function getLrdd()
+    public function testFingerFetchesWebfingerFirst()
     {
-        $xrd = new XML_XRD();
-        $xrd->subject = 'acct:user@example.org';
-        $xrd->links[0] = new XML_XRD_Element_Link();
-        $xrd->links[0]->rel = 'http://specs.openid.net/auth/2.0/provider';
-        $xrd->links[0]->uri = 'http://id.example.org/user';
-        return $xrd;
-    }
-
-    protected function addLoadXrdExpect($obj, $atPos, $url, $retVal = null)
-    {
-        $obj->expects($this->at($atPos))
-            ->method('loadXrd')
-            ->with(
-                $this->equalTo($url),
-                $this->anything()
-            )
-            ->will($this->returnValue($retVal));
-    }
-
-    public function testFingerFetchesHostMetaSslFirst()
-    {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
-        $this->addLoadXrdExpect(
-            $wf, 0,
-            'https://example.org/.well-known/host-meta',
-            $this->getHostMeta()
+        $this->addHttpResponse(
+            $this->getWebfinger(),
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org'
         );
 
-        $wf->expects($this->at(1))
-            ->method('loadXrd')
-            ->with(
-                $this->equalTo('https://example.org/lrdd?acct=acct%3Auser%40example.org'),
-                $this->anything()
-            );
+        $react = $this->wf->finger('user@example.org');
 
-        $wf->finger('user@example.org');
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org'
+        );
+        $this->assertDescribes('acct:user@example.org', $react);
     }
 
-    public function testFingerNoHostMeta()
+    public function testFingerFetchesHostMetaSslBeforeNonSsl()
     {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
-        //https
-        $wf->expects($this->at(0))
-            ->method('loadXrd')
-            ->will($this->returnValue(null));
-        //http
-        $this->addLoadXrdExpect(
-            $wf, 1,
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        );
+
+        $react = $this->wf->finger('user@example.org');
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org',
+            'https://example.org/.well-known/host-meta',
             'http://example.org/.well-known/host-meta'
         );
-
-        $react = $wf->finger('user@example.org');
         $this->assertEquals(
-            'No .well-known/host-meta for example.org', $react->error->getMessage()
+            'No .well-known/host-meta file found on example.org', $react->error->getMessage()
         );
     }
 
-    public function testFingerFetchesHostMetaHttpFallback()
+    public function testFingerLrdd()
     {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
-        //https
-        $this->addLoadXrdExpect(
-            $wf, 0,
-            'https://example.org/.well-known/host-meta'
-        );
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )
+            ->addHttpResponse($this->getHostMeta())
+            ->addHttpResponse($this->getLrdd());
+        $react = $this->wf->finger('user@example.org');
 
-        //http
-        $this->addLoadXrdExpect(
-            $wf, 1,
-            'http://example.org/.well-known/host-meta', $this->getHostMeta()
-        );
-
-        //lrdd
-        $this->addLoadXrdExpect(
-            $wf, 2,
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org',
+            'https://example.org/.well-known/host-meta',
             'https://example.org/lrdd?acct=acct%3Auser%40example.org'
         );
 
-        $wf->finger('user@example.org');
+        $this->assertNoError($react);
+        $this->assertDescribes('acct:user@example.org', $react);
     }
 
-    public function testFingerUserFallbackHttp()
+    public function testFingerLrddFallbackHttp()
     {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
-
-        //host-meta
-        $wf->expects($this->at(0))
-            ->method('loadXrd')
-            ->will($this->returnValue($this->getHostMeta()));
-
-        //https lrdd
-        $wf->expects($this->at(1))
-            ->method('loadXrd')
-            ->with(
-                $this->equalTo('https://example.org/lrdd?acct=acct%3Auser%40example.org'),
-                $this->anything()
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )
+            ->addHttpResponse($this->getHostMeta())
+            ->addHttpResponse(
+                new HTTP_Request2_Exception('No SSL lrdd for you.')
             )
-            ->will($this->returnValue(null));
+            ->addHttpResponse($this->getLrdd());
+        $react = $this->wf->finger('user@example.org');
 
-        //http lrdd
-        $wf->expects($this->at(2))
-            ->method('loadXrd')
-            ->with(
-                $this->equalTo('http://example.org/lrdd?acct=acct%3Auser%40example.org'),
-                $this->anything()
-            );
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org',
+            'https://example.org/.well-known/host-meta',
+            'https://example.org/lrdd?acct=acct%3Auser%40example.org',
+            'http://example.org/lrdd?acct=acct%3Auser%40example.org'
+        );
 
-        $wf->finger('user@example.org');
+        $this->assertNoError($react);
+        $this->assertDescribes('acct:user@example.org', $react);
     }
 
-    public function testFingerNoLrdd()
+    public function testFingerHostMetaNoLrddLink()
     {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
-        //https
-        $wf->expects($this->at(0))
-            ->method('loadXrd')
-            ->will($this->returnValue(new XML_XRD()));
-
-        $react = $wf->finger('user@example.org');
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )
+            ->addHttpResponse($this->getHostMetaEmpty());
+        $react = $this->wf->finger('user@example.org');
         $this->assertEquals(
             'No lrdd link in host-meta for example.org', $react->error->getMessage()
         );
     }
 
 
-
-    public function testFingerSecurityAllHttps()
+    public function testFingerSecurityLrddAllHttps()
     {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
-        //https
-        $this->addLoadXrdExpect(
-            $wf, 0,
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )
+            ->addHttpResponse($this->getHostMeta())
+            ->addHttpResponse($this->getLrdd());
+        $react = $this->wf->finger('user@example.org');
+
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org',
             'https://example.org/.well-known/host-meta',
-            $this->getHostMeta()
+            'https://example.org/lrdd?acct=acct%3Auser%40example.org'
         );
 
-        //https lrdd
-        $this->addLoadXrdExpect(
-            $wf, 1,
-            'https://example.org/lrdd?acct=acct%3Auser%40example.org',
-            $this->getLrdd()
-        );
-
-        $react = $wf->finger('user@example.org');
+        $this->assertNoError($react);
+        $this->assertDescribes('acct:user@example.org', $react);
         $this->assertTrue($react->secure);
     }
 
     public function testFingerSecurityHostMetaHttp()
     {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )
+            ->addHttpResponse(
+                new HTTP_Request2_Exception('No SSL host-meta for you.')
+            )
+            ->addHttpResponse($this->getHostMeta())
+            ->addHttpResponse($this->getLrdd());
+        $react = $this->wf->finger('user@example.org');
 
-        $this->addLoadXrdExpect(
-            $wf, 0,
-            'https://example.org/.well-known/host-meta'
-        );
-        $this->addLoadXrdExpect(
-            $wf, 1,
-            'http://example.org/.well-known/host-meta', $this->getHostMeta()
-        );
-
-        $react = $wf->finger('user@example.org');
-        $this->assertFalse($react->secure);
-    }
-
-    public function testFingerSecurityHostMetaHttpLrddHttps()
-    {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
-
-        $this->addLoadXrdExpect(
-            $wf, 0,
-            'https://example.org/.well-known/host-meta'
-        );
-        $this->addLoadXrdExpect(
-            $wf, 1,
-            'http://example.org/.well-known/host-meta', $this->getHostMeta()
-        );
-        $this->addLoadXrdExpect(
-            $wf, 2,
-            'https://example.org/lrdd?acct=acct%3Auser%40example.org',
-            $this->getLrdd()
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org',
+            'https://example.org/.well-known/host-meta',
+            'http://example.org/.well-known/host-meta',
+            'https://example.org/lrdd?acct=acct%3Auser%40example.org'
         );
 
-        $react = $wf->finger('user@example.org');
+        $this->assertNoError($react);
+        $this->assertDescribes('acct:user@example.org', $react);
         $this->assertFalse($react->secure);
     }
 
     public function testFingerSecurityHostMetaHttpsLrddHttp()
     {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )
+            ->addHttpResponse($this->getHostMeta())
+            ->addHttpResponse(
+                new HTTP_Request2_Exception('No SSL lrdd for you.')
+            )
+            ->addHttpResponse($this->getLrdd());
+        $react = $this->wf->finger('user@example.org');
 
-        $this->addLoadXrdExpect(
-            $wf, 0,
-            'https://example.org/.well-known/host-meta', $this->getHostMeta()
-        );
-        $this->addLoadXrdExpect(
-            $wf, 1,
-            'https://example.org/lrdd?acct=acct%3Auser%40example.org'
-        );
-        $this->addLoadXrdExpect(
-            $wf, 2,
-            'http://example.org/lrdd?acct=acct%3Auser%40example.org',
-            $this->getLrdd()
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org',
+            'https://example.org/.well-known/host-meta',
+            'https://example.org/lrdd?acct=acct%3Auser%40example.org',
+            'http://example.org/lrdd?acct=acct%3Auser%40example.org'
         );
 
-        $react = $wf->finger('user@example.org');
+        $this->assertNoError($react);
+        $this->assertDescribes('acct:user@example.org', $react);
         $this->assertFalse($react->secure);
     }
 
     public function testFingerSecurityLrddSubjectWrong()
     {
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )
+            ->addHttpResponse($this->getHostMeta())
+            ->addHttpResponse(
+                str_replace('example.org', 'bad.com', $this->getLrdd())
+            );
+        $react = $this->wf->finger('user@example.org');
 
-        $this->addLoadXrdExpect(
-            $wf, 0,
-            'https://example.org/.well-known/host-meta', $this->getHostMeta()
-        );
-        $lrdd = $this->getLrdd();
-        $lrdd->subject = 'otherhost.example.org';
-        $this->addLoadXrdExpect(
-            $wf, 1,
-            'https://example.org/lrdd?acct=acct%3Auser%40example.org',
-            $lrdd
-        );
-
-        $react = $wf->finger('user@example.org');
-        $this->assertFalse(
-            $react->secure,
-            'Host and XRD subject do not match, should not be secure anymore'
-        );
-    }
-
-    public function testSetHttpClient()
-    {
-        $req = new HTTP_Request2();
-        $adapter = new HTTP_Request2_Adapter_Mock();
-        $adapter->addResponse(
-            implode(
-                "\r\n",
-                array(
-                    'HTTP/1.1 200 OK',
-                    'Content-Type: application/xrd+xml',
-                    'Connection: close',
-                    '',
-                    '<?xml version="1.0"?>',
-                    '<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">',
-                    '</XRD>'
-                )
-            )
-        );
-        $req->setAdapter($adapter);
-
-        $wf = new Net_WebFinger();
-        $wf->setHttpClient($req);
-        $react = $wf->finger('foo@example.org');
+        $this->assertNotNull($react);
         $this->assertEquals(
-            'No lrdd link in host-meta for example.org', $react->error->getMessage()
-        );
-    }
-
-
-    public function testLoadXrdExceptionHandling()
-    {
-        $req = new HTTP_Request2();
-        $adapter = new HTTP_Request2_Adapter_Mock();
-        $adapter->addResponse(new HTTP_Request2_Exception('Fire in the tree!'));
-        $req->setAdapter($adapter);
-
-        $wf = new Net_WebFinger();
-        $wf->setHttpClient($req);
-        $react = $wf->finger('foo@example.org');
-        $this->assertEquals(
-            'No .well-known/host-meta for example.org',
+            'Webfinger file is not about "acct:user@example.org" but "acct:user@bad.com"',
             $react->error->getMessage()
         );
     }
 
-
     public function testLoadXrdNoHttpClient()
     {
+        $this->markTestSkipped();
         $wf = new Net_WebFinger();
         $rm = new ReflectionMethod($wf, 'loadXrd');
         $rm->setAccessible(true);
@@ -306,5 +201,132 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('23.42.net', $xrd->subject);
     }
 
+
+
+    /* helper methods + assertions */
+
+    protected function addHttpMock(Net_WebFinger $wf)
+    {
+        $this->adapter = new HTTP_Request2_Adapter_LogMock();
+        $req = new HTTP_Request2();
+        $req->setAdapter($this->adapter);
+        $wf->setHttpClient($req);
+        return $this;
+    }
+
+    protected function addHttpResponse($response, $url = null)
+    {
+        $this->adapter->addResponse($response, $url);
+        return $this;
+    }
+
+    protected function assertNoError(Net_WebFinger_Reaction $react)
+    {
+        if ($react->error === null) {
+            $this->assertNull($react->error);
+            return;
+        }
+
+        $this->fail(
+            'Reaction has an error: ' . $react->error->getMessage()
+        );
+    }
+
+    protected function assertDescribes($url, Net_WebFinger_Reaction $react)
+    {
+        $this->assertNoError($react);
+        $this->assertTrue(
+            $react->describes($url),
+            'Reaction does not describe "' . $url . '"'
+            . ' but is for "' . $react->subject . '"'
+        );
+    }
+
+    protected function assertUrlList()
+    {
+        $expectedUrls = func_get_args();
+        $this->assertEquals(
+            $expectedUrls, $this->adapter->requestedUrls,
+            'Expected URL list does not match with reality'
+        );
+    }
+
+    /* data generators */
+
+    protected function getWebfinger()
+    {
+        return implode(
+            "\r\n",
+            array(
+                'HTTP/1.1 200 OK',
+                'Content-Type: application/jrd+json',
+                'Connection: close',
+                '',
+                '{',
+                '    "subject" : "acct:user@example.org",',
+                '    "links" : [',
+                '        {',
+                '            "rel" : "http://webfinger.example/rel/avatar",',
+                '            "type" : "image/jpeg",',
+                '            "href" : "http://www.example.com/~user/user.jpg"',
+                '        }',
+                '    ]',
+                '}'
+            )
+        );
+    }
+
+    protected function getHostMeta()
+    {
+        return implode(
+            "\r\n",
+            array(
+                'HTTP/1.1 200 OK',
+                'Content-Type: application/xrd+xml',
+                'Connection: close',
+                '',
+                '<?xml version="1.0"?>',
+                '<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">',
+                ' <Subject>example.org</Subject>',
+                ' <Link rel="lrdd" template="https://example.org/lrdd?acct={uri}" />',
+                '</XRD>'
+            )
+        );
+    }
+
+    protected function getHostMetaEmpty()
+    {
+        return implode(
+            "\r\n",
+            array(
+                'HTTP/1.1 200 OK',
+                'Content-Type: application/xrd+xml',
+                'Connection: close',
+                '',
+                '<?xml version="1.0"?>',
+                '<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">',
+                ' <Subject>example.org</Subject>',
+                '</XRD>'
+            )
+        );
+    }
+
+    protected function getLrdd()
+    {
+        return implode(
+            "\r\n",
+            array(
+                'HTTP/1.1 200 OK',
+                'Content-Type: application/xrd+xml',
+                'Connection: close',
+                '',
+                '<?xml version="1.0"?>',
+                '<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">',
+                ' <Subject>acct:user@example.org</Subject>',
+                ' <Link rel="http://specs.openid.net/auth/2.0/provider" template="http://id.example.org/user"/>',
+                '</XRD>'
+            )
+        );
+    }
 }
 ?>

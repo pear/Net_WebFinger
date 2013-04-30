@@ -31,6 +31,11 @@ class Net_WebFinger_Error extends Exception
      * The .well-known/host-meta file does not have a link with rel="lrdd".
      */
     const NO_LRDD_LINK = 2342011;
+
+    /**
+     * XRD file does not describe() the requested account
+     */
+    const DESCRIBE = 2342012;
 }
 
 ?>
