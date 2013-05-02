@@ -39,7 +39,7 @@ require_once 'Net/WebFinger/Reaction.php';
 class Net_WebFinger
 {
     /**
-     * Retry with HTTP if the HTTPS request fails.
+     * Retry with HTTP if the HTTPS webfinger request fails.
      * This is not allowed by the webfinger specification, but may be
      * helpful during development.
      *
@@ -117,7 +117,17 @@ class Net_WebFinger
             return $hostMeta;
         }
 
-        return $this->loadLrdd($identifier, $host, $hostMeta);
+        $react = $this->loadLrdd($identifier, $host, $hostMeta);
+        if ($react->error
+            && $react->error->getCode() == Net_WebFinger_Error::NO_LRDD
+        ) {
+            $react->error = new Net_WebFinger_Error(
+                'No webfinger data found',
+                Net_WebFinger_Error::NOTHING,
+                $react->error
+            );
+        }
+        return $react;
     }
 
     /**
@@ -146,14 +156,12 @@ class Net_WebFinger
             $react = new Net_WebFinger_Reaction();
             $userUrl = 'http://' . substr($userUrl, 8);
             $this->loadXrd($react, $userUrl);
+            $react->secure = false;
         }
         if ($react->error !== null) {
             return $react;
         }
 
-        if (!$this->isHttps($userUrl)) {
-            $react->secure = false;
-        }
         $this->verifyDescribes($react, $account);
 
         return $react;
@@ -276,12 +284,7 @@ class Net_WebFinger
     ) {
         //copy certain links from hostMeta to lrdd
         $react = new Net_WebFinger_Reaction();
-        foreach ($hostMeta->links as $link) {
-            if ($link->rel == 'http://specs.openid.net/auth/2.0/provider') {
-                $react->links[] = $link;
-            }
-        }
-        $react->secure = $hostMeta->secure;
+        $this->mergeHostMeta($react, $hostMeta);
 
         $link = $hostMeta->get('lrdd', 'application/xrd+xml');
         if ($link === null || !$link->template) {
@@ -304,6 +307,11 @@ class Net_WebFinger
             $res = $this->loadXrd($react, $userUrl);
         }
         if (!$res) {
+            $react->error = new Net_WebFinger_Error(
+                'LRDD file not found',
+                Net_WebFinger_Error::NO_LRDD,
+                $react->error
+            );
             return $react;
         }
 
@@ -313,6 +321,17 @@ class Net_WebFinger
         $this->verifyDescribes($react, $account);
 
         return $react;
+    }
+
+    protected function mergeHostMeta(
+        Net_WebFinger_Reaction $react, Net_WebFinger_Reaction $hostMeta
+    ) {
+        foreach ($hostMeta->links as $link) {
+            if ($link->rel == 'http://specs.openid.net/auth/2.0/provider') {
+                $react->links[] = $link;
+            }
+        }
+        $react->secure = $hostMeta->secure;
     }
 
     protected function verifyDescribes(Net_WebFinger_Reaction $react, $account)
@@ -352,6 +371,7 @@ class Net_WebFinger
     protected function loadXrd(Net_WebFinger_Reaction $react, $url)
     {
         try {
+            $react->error = null;
             if ($this->httpClient !== null) {
                 $this->httpClient->setUrl($url);
                 $this->httpClient->setHeader(
@@ -359,10 +379,36 @@ class Net_WebFinger
                     'application/jrd+json, application/xrd+xml;q=0.9',
                     true
                 );
-                $react->loadString($this->httpClient->send()->getBody());
+                $res = $this->httpClient->send();
+                $code = $res->getStatus();
+                if (intval($code / 100) !== 2) {
+                    throw new Net_WebFinger_Error(
+                        'Error loading XRD file: ' . $res->getStatus()
+                        . ' ' . $res->getReasonPhrase(),
+                        Net_WebFinger_Error::NOT_FOUND
+                    );
+                }
+                $react->loadString($res->getBody());
             } else {
-                //FIXME: set accept header with file_get_contents, too
-                $react->loadFile($url);
+                $context = stream_context_create(
+                    array(
+                        'http' => array(
+                            'user_agent' => 'PEAR Net_WebFinger',
+                            'header' => 'accept: application/jrd+json, application/xrd+xml;q=0.9',
+                        )
+                    )
+                );
+                $content = @file_get_contents($url, false, $context);
+                if ($content === false) {
+                    $msg = 'Error loading XRD file';
+                    if (isset($http_response_header)) {
+                        $msg .= ': ' . $http_response_header[0];
+                    };
+                    throw new Net_WebFinger_Error(
+                        $msg, Net_WebFinger_Error::NOT_FOUND
+                    );
+                }
+                $react->loadString($content);
             }
             return true;
         } catch (Exception $e) {

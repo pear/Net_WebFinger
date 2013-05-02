@@ -33,9 +33,24 @@ class Net_WebFinger_Error extends Exception
     const NO_LRDD_LINK = 2342011;
 
     /**
+     * The LRDD file could not be found
+     */
+    const NO_LRDD = 2342012;
+
+    /**
      * XRD file does not describe() the requested account
      */
-    const DESCRIBE = 2342012;
+    const DESCRIBE = 2342013;
+
+    /**
+     * XRD could file could not be found
+     */
+    const NOT_FOUND = 2342014;
+
+    /**
+     * No webfinger data found
+     */
+    const NOTHING = 2342015;
 }
 
 ?>

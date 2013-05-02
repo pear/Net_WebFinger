@@ -13,6 +13,9 @@ if (is_dir(__DIR__ . '/../src/')) {
         get_include_path() . PATH_SEPARATOR . __DIR__ . '/../src/'
     );
 }
+    set_include_path(
+        '/home/cweiske/Dev/pear/git-packages/XML_XRD/src/' . PATH_SEPARATOR . get_include_path()
+    );
 require_once 'Net/WebFinger.php';
 
 

@@ -32,6 +32,24 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         $this->assertDescribes('acct:user@example.org', $react);
     }
 
+    public function testFingerWebfingerFallbackHttp()
+    {
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )->addHttpResponse(
+            $this->getWebfinger()
+        );
+
+        $this->wf->fallbackToHttp = true;
+        $react = $this->wf->finger('user@example.org');
+
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org',
+            'http://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org'
+        );
+        $this->assertDescribes('acct:user@example.org', $react);
+    }
+
     public function testFingerFetchesHostMetaSslBeforeNonSsl()
     {
         $this->addHttpResponse(
@@ -66,6 +84,26 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
 
         $this->assertNoError($react);
         $this->assertDescribes('acct:user@example.org', $react);
+    }
+
+    public function testFingerLrddOpenIdFromHostMeta()
+    {
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )
+            ->addHttpResponse($this->getHostMetaOpenId())
+            ->addHttpResponse($this->getLrddEmpty());
+        $react = $this->wf->finger('user@example.org');
+
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org',
+            'https://example.org/.well-known/host-meta',
+            'https://example.org/lrdd?acct=acct%3Auser%40example.org'
+        );
+
+        $this->assertNoError($react);
+        $this->assertDescribes('acct:user@example.org', $react);
+        $this->assertEquals('http://id.example.org/', $react->openid);
     }
 
     public function testFingerLrddFallbackHttp()
@@ -122,6 +160,33 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         $this->assertNoError($react);
         $this->assertDescribes('acct:user@example.org', $react);
         $this->assertTrue($react->secure);
+    }
+
+    public function testFingerNoLrddFile()
+    {
+        $this->addHttpResponse(
+            new HTTP_Request2_Exception('No webfinger for you.')
+        )
+            ->addHttpResponse($this->getHostMeta());
+        $react = $this->wf->finger('user@example.org');
+
+        $this->assertNotNull($react->error);
+        $this->assertEquals(
+            'No webfinger data found',
+            $react->error->getMessage()
+        );
+
+        $this->assertNotNull($react->error->getPrevious());
+        $this->assertEquals(
+            'LRDD file not found',
+            $react->error->getPrevious()->getMessage()
+        );
+
+        $this->assertNotNull($react->error->getPrevious()->getPrevious());
+        $this->assertEquals(
+            'Error loading XRD file: 400 Bad Request',
+            $react->error->getPrevious()->getPrevious()->getMessage()
+        );
     }
 
     public function testFingerSecurityHostMetaHttp()
@@ -294,6 +359,25 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    protected function getHostMetaOpenId()
+    {
+        return implode(
+            "\r\n",
+            array(
+                'HTTP/1.1 200 OK',
+                'Content-Type: application/xrd+xml',
+                'Connection: close',
+                '',
+                '<?xml version="1.0"?>',
+                '<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">',
+                ' <Subject>example.org</Subject>',
+                ' <Link rel="lrdd" template="https://example.org/lrdd?acct={uri}" />',
+                ' <Link rel="http://specs.openid.net/auth/2.0/provider" href="http://id.example.org/"/>',
+                '</XRD>'
+            )
+        );
+    }
+
     protected function getHostMetaEmpty()
     {
         return implode(
@@ -324,6 +408,23 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
                 '<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">',
                 ' <Subject>acct:user@example.org</Subject>',
                 ' <Link rel="http://specs.openid.net/auth/2.0/provider" template="http://id.example.org/user"/>',
+                '</XRD>'
+            )
+        );
+    }
+
+    protected function getLrddEmpty()
+    {
+        return implode(
+            "\r\n",
+            array(
+                'HTTP/1.1 200 OK',
+                'Content-Type: application/xrd+xml',
+                'Connection: close',
+                '',
+                '<?xml version="1.0"?>',
+                '<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">',
+                ' <Subject>acct:user@example.org</Subject>',
                 '</XRD>'
             )
         );
