@@ -112,7 +112,7 @@ class Net_WebFinger
         }
 
         //fall back to host-meta and LRDD file if webfinger URL does not exist
-        $hostMeta = $this->loadHostMetaCached($host);
+        $hostMeta = $this->loadHostMeta($host);
         if ($hostMeta->error) {
             return $hostMeta;
         }
@@ -146,16 +146,14 @@ class Net_WebFinger
         $userUrl = 'https://' . $host . '/.well-known/webfinger?resource='
             . urlencode($account);
 
-        $react = new Net_WebFinger_Reaction();
-        $this->loadXrd($react, $userUrl);
+        $react = $this->loadXrdCached($userUrl);
 
         if ($this->fallbackToHttp && $react->error !== null
             && $this->isHttps($userUrl)
         ) {
             //fall back to HTTP
-            $react = new Net_WebFinger_Reaction();
             $userUrl = 'http://' . substr($userUrl, 8);
-            $this->loadXrd($react, $userUrl);
+            $react = $this->loadXrdCached($userUrl);
             $react->secure = false;
         }
         if ($react->error !== null) {
@@ -165,39 +163,6 @@ class Net_WebFinger
         $this->verifyDescribes($react, $account);
 
         return $react;
-    }
-
-    /**
-     * Load the host's .well-known/host-meta XRD file and caches it.
-     *
-     * @param string $host  Hostname to fetch host-meta file from
-     *
-     * @return Net_WebFinger_Reaction Reaction object with host-meta data
-     *
-     * @see loadHostMeta()
-     */
-    protected function loadHostMetaCached($host)
-    {
-        if (!$this->cache) {
-            return $this->loadHostMeta($host);
-        }
-
-        //FIXME: make $host secure, remove / and so
-        $cacheId     = 'hostmeta-' . $host;
-        $cacheRetval = $this->cache->get($cacheId);
-        if ($cacheRetval !== null) {
-            //load from cache
-            return $cacheRetval;
-        }
-
-        //no cache yet
-        $retval = $this->loadHostMeta($host);
-
-        //we do not implement http caching headers yet
-        //5 minutes expiry time by default
-        $this->cache->save($cacheId, $retval, '+300');
-
-        return $retval;
     }
 
     /**
@@ -212,7 +177,6 @@ class Net_WebFinger
      *
      * @return Net_WebFinger_Reaction Reaction object
      *
-     * @see Net_WebFinger_Reaction::$hostMetaXrd
      * @see Net_WebFinger_Reaction::$error
      */
     protected function loadHostMeta($host)
@@ -229,22 +193,26 @@ class Net_WebFinger
         $react = new Net_WebFinger_Reaction();
         $react->secure = true;
 
-        $res = $this->loadXrd($react, 'https://' . $host . '/.well-known/host-meta');
-        if (!$res) {
-            $res = $this->loadXrd(
-                $react, 'http://' . $host . '/.well-known/host-meta'
-            );
-            //no https, so not secure
-            $react->secure = false;
-            if (!$res) {
-                $react->error = new Net_WebFinger_Error(
-                    'No .well-known/host-meta file found on ' . $host,
-                    Net_WebFinger_Error::NO_HOSTMETA,
-                    $react->error
-                );
-            }
+        $react = $this->loadXrdCached('https://' . $host . '/.well-known/host-meta');
+        if (!$react->error) {
+            return $react;
         }
 
+        $react = $this->loadXrdCached(
+            'http://' . $host . '/.well-known/host-meta'
+        );
+        //no https, so not secure
+        $react->secure = false;
+
+        if (!$react->error) {
+            return $react;
+        }
+
+        $react->error = new Net_WebFinger_Error(
+            'No .well-known/host-meta file found on ' . $host,
+            Net_WebFinger_Error::NO_HOSTMETA,
+            $react->error
+        );
         return $react;
     }
 
@@ -260,42 +228,37 @@ class Net_WebFinger
      *
      * @return Net_WebFinger_Reaction Reaction object
      *
-     * @see Net_WebFinger_Reaction::$hostMetaXrd
      * @see Net_WebFinger_Reaction::$error
      */
-    protected function loadLrdd(
-        $identifier, $host, XML_XRD $hostMeta
-    ) {
-        //copy certain links from hostMeta to lrdd
-        $react = new Net_WebFinger_Reaction();
-        $this->mergeHostMeta($react, $hostMeta);
-
+    protected function loadLrdd($identifier, $host, XML_XRD $hostMeta)
+    {
         $link = $hostMeta->get('lrdd', 'application/xrd+xml');
         if ($link === null || !$link->template) {
+            $react = new Net_WebFinger_Reaction();
             $react->error = new Net_WebFinger_Error(
                 'No lrdd link in host-meta for ' . $host,
-                Net_WebFinger_Error::NO_LRDD_LINK,
-                $react->error
+                Net_WebFinger_Error::NO_LRDD_LINK
             );
+            $this->mergeHostMeta($react, $hostMeta);
             return $react;
         }
 
         $account = 'acct:' . $identifier;
         $userUrl = str_replace('{uri}', urlencode($account), $link->template);
 
-        $res = $this->loadXrd($react, $userUrl);
-        if (!$res && $this->isHttps($userUrl)) {
+        $react = $this->loadXrdCached($userUrl);
+        if ($react->error && $this->isHttps($userUrl)) {
             //fall back to HTTP
             $userUrl = 'http://' . substr($userUrl, 8);
-            $react->error = null;
-            $res = $this->loadXrd($react, $userUrl);
+            $react = $this->loadXrdCached($userUrl);
         }
-        if (!$res) {
+        if ($react->error) {
             $react->error = new Net_WebFinger_Error(
                 'LRDD file not found',
                 Net_WebFinger_Error::NO_LRDD,
                 $react->error
             );
+            $this->mergeHostMeta($react, $hostMeta);
             return $react;
         }
 
@@ -303,6 +266,8 @@ class Net_WebFinger
             $react->secure = false;
         }
         $this->verifyDescribes($react, $account);
+
+        $this->mergeHostMeta($react, $hostMeta);
 
         return $react;
     }
@@ -315,7 +280,7 @@ class Net_WebFinger
                 $react->links[] = $link;
             }
         }
-        $react->secure = $hostMeta->secure;
+        $react->secure = $react->secure && $hostMeta->secure;
     }
 
     protected function verifyDescribes(Net_WebFinger_Reaction $react, $account)
@@ -344,21 +309,59 @@ class Net_WebFinger
     }
 
     /**
+     * Load an XRD file and caches it.
+     *
+     * @param string $url URL to fetch
+     *
+     * @return Net_WebFinger_Reaction Reaction object with XRD data
+     *
+     * @see loadXrd()
+     */
+    protected function loadXrdCached($url)
+    {
+        if (!$this->cache) {
+            return $this->loadXrd($url);
+        }
+
+        //FIXME: make $host secure, remove / and so
+        $cacheId = 'webfinger-cache-' . str_replace(
+            array('/', ':'), '-.-', $url
+        );
+        $cacheRetval = $this->cache->get($cacheId);
+        if ($cacheRetval !== null) {
+            //load from cache
+            return $cacheRetval;
+        }
+
+        //no cache yet
+        $retval = $this->loadXrd($url);
+
+        //we do not implement http caching headers yet, so use default
+        // cache lifetime settings
+        $this->cache->save($cacheId, $retval);
+
+        return $retval;
+    }
+
+    /**
      * Loads the XRD file from the given URL.
      * Sets $react->error when loading fails
      *
-     * @param object $react Reaction object to store error in
-     * @param string $url   URL to fetch
+     * @param string $url URL to fetch
      *
      * @return boolean True if loading data succeeded, false if not
      */
-    protected function loadXrd(Net_WebFinger_Reaction $react, $url)
+    protected function loadXrd($url)
     {
         try {
+            $react = new Net_WebFinger_Reaction();
             $react->url = $url;
             $react->error = null;
             if ($this->httpClient !== null) {
                 $this->httpClient->setUrl($url);
+                $this->httpClient->setHeader(
+                    'user-agent', 'PEAR Net_WebFinger', true
+                );
                 $this->httpClient->setHeader(
                     'accept',
                     'application/jrd+json, application/xrd+xml;q=0.9',
@@ -378,7 +381,7 @@ class Net_WebFinger
                 $context = stream_context_create(
                     array(
                         'http' => array(
-                            'user_agent' => 'PEAR Net_WebFinger',
+                            'user-agent' => 'PEAR Net_WebFinger',
                             'header' => 'accept: application/jrd+json, application/xrd+xml;q=0.9',
                             'follow_location' => true,
                             'max_redirects' => 20
@@ -400,11 +403,11 @@ class Net_WebFinger
                 }
                 $react->loadString($content);
             }
-            return true;
         } catch (Exception $e) {
             $react->error = $e;
-            return false;
         }
+
+        return $react;
     }
 
 }

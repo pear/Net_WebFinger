@@ -32,6 +32,9 @@ class Net_WebFingerCacheTest extends Net_WebFingerTestBase
         // a stream wrapper like vfsStream for cache file testing
         $this->cacheDir = sys_get_temp_dir() . '/Net_WebFingerTest-' . uniqid();
         mkdir($this->cacheDir);
+
+        //ignore PEAR::isError() strict warnings
+        error_reporting(error_reporting() & ~E_STRICT);
     }
 
     public function tearDown()
@@ -53,46 +56,30 @@ class Net_WebFingerCacheTest extends Net_WebFingerTestBase
 
     public function testSetCache()
     {
-        $this->markTestSkipped('fixme: mocking');
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
-        //fill cache
-        $wf->expects($this->exactly(1))
-            ->method('loadXrd')
-            ->will($this->returnValue($this->getHostMetaNoLrdd()));
+        $wf = new Net_WebFinger();
+        $this->addHttpMock($wf);
+        $this->addHttpResponse(
+            $this->getWebfinger(),
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org'
+        );
 
         $wf->setCache(
             new Cache('file', array('cache_dir' => $this->cacheDir))
         );
+
+        //fill cache
         $react = $wf->finger('user@example.org');
-        $err = $react->error->getMessage();
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org'
+        );
+        $this->assertDescribes('acct:user@example.org', $react);
 
         //use cache
-        $wf->expects($this->never())->method('loadXrd');
         $react = $wf->finger('user@example.org');
-        $this->assertTrue($react->describes('user@example.org'));
-        $this->assertEquals($err, $react->error->getMessage());
-    }
-
-    public function testLoadHostMetaCachedExpiry()
-    {
-        $this->markTestSkipped('fixme: mocking');
-        $wf = $this->getMock('Net_WebFinger', array('loadXrd'));
-        //fill cache
-        $wf->expects($this->exactly(2))
-            ->method('loadXrd')
-            ->will($this->returnValue($this->getHostMetaNoLrddExpiry()));
-
-        $wf->setCache(
-            new Cache('file', array('cache_dir' => $this->cacheDir))
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=acct%3Auser%40example.org'
         );
-        $react = $wf->finger('user@example.org');
-        $err = $react->error->getMessage();
-
-        //use cache: cache expired
-        sleep(3);
-        $react = $wf->finger('user@example.org');
-        $this->assertTrue($react->describes('user@example.org'));
-        $this->assertEquals($err, $react->error->getMessage());
+        $this->assertDescribes('acct:user@example.org', $react);
     }
 }
 

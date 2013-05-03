@@ -227,7 +227,7 @@ class Net_WebFingerTest extends Net_WebFingerTestBase
 
         $this->assertNoError($react);
         $this->assertDescribes('acct:user@example.org', $react);
-        $this->assertFalse($react->secure);
+        $this->assertFalse($react->secure, 'Reaction should not be secure');
     }
 
     public function testFingerSecurityLrddSubjectWrong()
@@ -253,9 +253,8 @@ class Net_WebFingerTest extends Net_WebFingerTestBase
         $wf = new Net_WebFinger();
         $rm = new ReflectionMethod($wf, 'loadXrd');
         $rm->setAccessible(true);
-        $react = new Net_WebFinger_Reaction();
-        $rm->invoke(
-            $wf, $react, __DIR__ . '/../subject.xrd'
+        $react = $rm->invoke(
+            $wf, __DIR__ . '/../subject.xrd'
         );
 
         $this->assertNoError($react);
@@ -267,9 +266,8 @@ class Net_WebFingerTest extends Net_WebFingerTestBase
         $wf = new Net_WebFinger();
         $rm = new ReflectionMethod($wf, 'loadXrd');
         $rm->setAccessible(true);
-        $react = new Net_WebFinger_Reaction();
-        $rm->invoke(
-            $wf, $react, __DIR__ . '/doesnotexist'
+        $react = $rm->invoke(
+            $wf, __DIR__ . '/doesnotexist'
         );
 
         $this->assertNotNull($react->error);
@@ -284,9 +282,8 @@ class Net_WebFingerTest extends Net_WebFingerTestBase
         $wf = new Net_WebFinger();
         $rm = new ReflectionMethod($wf, 'loadXrd');
         $rm->setAccessible(true);
-        $react = new Net_WebFinger_Reaction();
-        $rm->invoke(
-            $wf, $react,'http://127.0.0.127/doesnotexist'
+        $react = $rm->invoke(
+            $wf, 'http://127.0.0.127/doesnotexist'
         );
 
         $this->assertNotNull($react->error);
