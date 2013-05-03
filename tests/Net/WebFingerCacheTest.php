@@ -1,11 +1,12 @@
 <?php
 require_once 'Net/WebFinger.php';
+require_once 'Net/WebFingerTestBase.php';
 
 require_once 'Cache.php';
 require_once 'HTTP/Request2.php';
 require_once 'HTTP/Request2/Adapter/Mock.php';
 
-class Net_WebFingerCacheTest extends PHPUnit_Framework_TestCase
+class Net_WebFingerCacheTest extends Net_WebFingerTestBase
 {
     protected $cacheDir;
 
