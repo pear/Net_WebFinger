@@ -272,6 +272,14 @@ class Net_WebFinger
         return $react;
     }
 
+    /**
+     * Merges some properties from the hostMeta file into the reaction object
+     *
+     * @param object $react    Target reaction object
+     * @param object $hostMeta Source hostMeta object
+     *
+     * @return void
+     */
     protected function mergeHostMeta(
         Net_WebFinger_Reaction $react, Net_WebFinger_Reaction $hostMeta
     ) {
@@ -283,6 +291,15 @@ class Net_WebFinger
         $react->secure = $react->secure && $hostMeta->secure;
     }
 
+    /**
+     * Verifies that the reaction object is about the given account URL.
+     * Sets the error property in the reaction object.
+     *
+     * @param object $react   Reaction object to check
+     * @param string $account acct: URL that the reaction should be about
+     *
+     * @return void
+     */
     protected function verifyDescribes(Net_WebFinger_Reaction $react, $account)
     {
         if (!$react->describes($account)) {
