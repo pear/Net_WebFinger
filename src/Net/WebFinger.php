@@ -366,6 +366,7 @@ class Net_WebFinger
     protected function loadXrd(Net_WebFinger_Reaction $react, $url)
     {
         try {
+            $react->url = $url;
             $react->error = null;
             if ($this->httpClient !== null) {
                 $this->httpClient->setUrl($url);

@@ -94,6 +94,13 @@ class Net_WebFinger_Reaction extends XML_XRD
     public $secure = true;
 
     /**
+     * URL from which the data have been fetched
+     *
+     * @var string
+     */
+    public $url;
+
+    /**
      * Provides short names for common link relations.
      *
      * Keys in this array may be used as class variable.

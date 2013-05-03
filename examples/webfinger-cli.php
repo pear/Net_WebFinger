@@ -32,6 +32,7 @@ $wf = new Net_WebFinger();
 $react = $wf->finger($identifier);
 
 echo 'Information secure? ' . var_export($react->secure, true) . "\n";
+echo 'Data source URL: ' . $react->url . "\n";
 
 if ($react->error !== null) {
     echo 'Error: ';
