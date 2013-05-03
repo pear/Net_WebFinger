@@ -269,7 +269,7 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('23.42.net', $react->subject);
     }
 
-    public function testLoadXrdNoHttpClientError()
+    public function testLoadXrdNoHttpClientFileNotFound()
     {
         $wf = new Net_WebFinger();
         $rm = new ReflectionMethod($wf, 'loadXrd');
@@ -282,6 +282,23 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
         $this->assertNotNull($react->error);
         $this->assertEquals(
             'Error loading XRD file',
+            $react->error->getMessage()
+        );
+    }
+
+    public function testLoadXrdNoHttpClientUrlNotFound()
+    {
+        $wf = new Net_WebFinger();
+        $rm = new ReflectionMethod($wf, 'loadXrd');
+        $rm->setAccessible(true);
+        $react = new Net_WebFinger_Reaction();
+        $rm->invoke(
+            $wf, $react,'http://127.0.0.127/doesnotexist'
+        );
+
+        $this->assertNotNull($react->error);
+        $this->assertEquals(
+            'Error loading XRD file: HTTP/1.1 404 Not Found',
             $react->error->getMessage()
         );
     }
