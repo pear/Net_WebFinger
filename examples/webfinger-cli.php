@@ -18,6 +18,13 @@ if (is_dir(__DIR__ . '/../src/')) {
     );
 require_once 'Net/WebFinger.php';
 
+function displayError(Exception $error) {
+    echo $error->getMessage() . "\n";
+    if ($error->getPrevious()) {
+        echo ' Underlying error: ';
+        displayError($error->getPrevious());
+    }
+}
 
 echo 'Discovering ' . $identifier . "\n";
 
@@ -27,11 +34,8 @@ $react = $wf->finger($identifier);
 echo 'Information secure? ' . var_export($react->secure, true) . "\n";
 
 if ($react->error !== null) {
-    echo 'Error: ' . $react->error->getMessage() . "\n";
-    if ($react->error->getPrevious()) {
-        echo ' Underlying error: '
-            . trim($react->error->getPrevious()->getMessage()) . "\n";
-    }
+    echo 'Error: ';
+    displayError($react->error);
 }
 
 if ($react->openid === null) {

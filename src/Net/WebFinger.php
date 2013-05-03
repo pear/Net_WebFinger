@@ -403,7 +403,10 @@ class Net_WebFinger
                         $msg .= ': ' . $http_response_header[0];
                     };
                     throw new Net_WebFinger_Error(
-                        $msg, Net_WebFinger_Error::NOT_FOUND
+                        $msg, Net_WebFinger_Error::NOT_FOUND,
+                        new Net_WebFinger_Error(
+                            'file_get_contents on ' . $url
+                        )
                     );
                 }
                 $react->loadString($content);
