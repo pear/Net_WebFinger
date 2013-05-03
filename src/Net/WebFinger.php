@@ -48,17 +48,6 @@ class Net_WebFinger
     public $fallbackToHttp = false;
 
     /**
-     * Verify the remote SSL certificate
-     *
-     * Spec says:
-     * > If the client determines that the resource has an invalid certificate,
-     * > [...] then the client MUST accept that the WebFinger query has failed
-     *
-     * @var boolean
-     */
-    public $verifySslCert = true;
-
-    /**
      * HTTP client to use.
      *
      * @var HTTP_Request2
@@ -391,9 +380,8 @@ class Net_WebFinger
                         'http' => array(
                             'user_agent' => 'PEAR Net_WebFinger',
                             'header' => 'accept: application/jrd+json, application/xrd+xml;q=0.9',
-                        ),
-                        'ssl' => array(
-                            'verify_peer' => $this->verifySslCert
+                            'follow_location' => true,
+                            'max_redirects' => 20
                         )
                     )
                 );
