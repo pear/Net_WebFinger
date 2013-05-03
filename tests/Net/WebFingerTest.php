@@ -257,13 +257,33 @@ class Net_WebFingerTest extends PHPUnit_Framework_TestCase
 
     public function testLoadXrdNoHttpClient()
     {
-        $this->markTestSkipped();
         $wf = new Net_WebFinger();
         $rm = new ReflectionMethod($wf, 'loadXrd');
         $rm->setAccessible(true);
-        $xrd = $rm->invoke($wf, __DIR__ . '/../subject.xrd', new Net_WebFinger_Reaction());
-        $this->assertInstanceOf('XML_XRD', $xrd);
-        $this->assertEquals('23.42.net', $xrd->subject);
+        $react = new Net_WebFinger_Reaction();
+        $rm->invoke(
+            $wf, $react, __DIR__ . '/../subject.xrd'
+        );
+
+        $this->assertNoError($react);
+        $this->assertEquals('23.42.net', $react->subject);
+    }
+
+    public function testLoadXrdNoHttpClientError()
+    {
+        $wf = new Net_WebFinger();
+        $rm = new ReflectionMethod($wf, 'loadXrd');
+        $rm->setAccessible(true);
+        $react = new Net_WebFinger_Reaction();
+        $rm->invoke(
+            $wf, $react, __DIR__ . '/doesnotexist'
+        );
+
+        $this->assertNotNull($react->error);
+        $this->assertEquals(
+            'Error loading XRD file',
+            $react->error->getMessage()
+        );
     }
 
 

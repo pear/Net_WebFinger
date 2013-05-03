@@ -48,6 +48,17 @@ class Net_WebFinger
     public $fallbackToHttp = false;
 
     /**
+     * Verify the remote SSL certificate
+     *
+     * Spec says:
+     * > If the client determines that the resource has an invalid certificate,
+     * > [...] then the client MUST accept that the WebFinger query has failed
+     *
+     * @var boolean
+     */
+    public $verifySslCert = true;
+
+    /**
      * HTTP client to use.
      *
      * @var HTTP_Request2
@@ -112,8 +123,8 @@ class Net_WebFinger
         }
 
         //fall back to host-meta and LRDD file if webfinger URL does not exist
-        $hostMeta = new Net_WebFinger_Reaction();
-        if (!$this->loadHostMetaCached($hostMeta, $host)) {
+        $hostMeta = $this->loadHostMetaCached($host);
+        if ($hostMeta->error) {
             return $hostMeta;
         }
 
@@ -170,17 +181,16 @@ class Net_WebFinger
     /**
      * Load the host's .well-known/host-meta XRD file and caches it.
      *
-     * @param object $react Reaction object to fill
      * @param string $host  Hostname to fetch host-meta file from
      *
-     * @return boolean True if the host-meta file could be loaded
+     * @return Net_WebFinger_Reaction Reaction object with host-meta data
      *
      * @see loadHostMeta()
      */
-    protected function loadHostMetaCached(Net_WebFinger_Reaction $react, $host)
+    protected function loadHostMetaCached($host)
     {
         if (!$this->cache) {
-            return $this->loadHostMeta($react, $host);
+            return $this->loadHostMeta($host);
         }
 
         //FIXME: make $host secure, remove / and so
@@ -188,29 +198,15 @@ class Net_WebFinger
         $cacheRetval = $this->cache->get($cacheId);
         if ($cacheRetval !== null) {
             //load from cache
-            $react->hostMetaXrd = $cacheRetval['hostMetaXrd'];
-            $react->error       = $cacheRetval['error'];
-            $react->secure      = $cacheRetval['secure'];
-            $retval             = $cacheRetval['retval'];
-            return $retval;
+            return $cacheRetval;
         }
 
         //no cache yet
-        $retval = $this->loadHostMeta($react, $host);
-        $data   = array(
-            'retval'      => $retval,
-            'hostMetaXrd' => $react->hostMetaXrd,
-            'error'       => $react->error,
-            'secure'      => $react->secure
-        );
+        $retval = $this->loadHostMeta($host);
 
         //we do not implement http caching headers yet
         //5 minutes expiry time by default
-        $expiry = '+300';
-        if ($react->hostMetaXrd && $react->hostMetaXrd->expires > time()) {
-            $expiry = $react->hostMetaXrd->expires;
-        }
-        $this->cache->save($cacheId, $data, $expiry);
+        $this->cache->save($cacheId, $retval, '+300');
 
         return $retval;
     }
@@ -223,15 +219,14 @@ class Net_WebFinger
      *
      * When the XRD file cannot be loaded, this method returns false.
      *
-     * @param object $react Reaction object to fill
-     * @param string $host  Hostname to fetch host-meta file from
+     * @param string $host Hostname to fetch host-meta file from
      *
-     * @return boolean True if the host-meta file could be loaded
+     * @return Net_WebFinger_Reaction Reaction object
      *
      * @see Net_WebFinger_Reaction::$hostMetaXrd
      * @see Net_WebFinger_Reaction::$error
      */
-    protected function loadHostMeta(Net_WebFinger_Reaction $react, $host)
+    protected function loadHostMeta($host)
     {
         /**
          * HTTPS is secure.
@@ -242,6 +237,7 @@ class Net_WebFinger
          * > The use of the "Alias" element in host-meta is undefined and
          * > NOT RECOMMENDED.
          */
+        $react = new Net_WebFinger_Reaction();
         $react->secure = true;
 
         $res = $this->loadXrd($react, 'https://' . $host . '/.well-known/host-meta');
@@ -257,11 +253,10 @@ class Net_WebFinger
                     Net_WebFinger_Error::NO_HOSTMETA,
                     $react->error
                 );
-                return false;
             }
         }
 
-        return true;
+        return $react;
     }
 
     /**
@@ -395,6 +390,9 @@ class Net_WebFinger
                         'http' => array(
                             'user_agent' => 'PEAR Net_WebFinger',
                             'header' => 'accept: application/jrd+json, application/xrd+xml;q=0.9',
+                        ),
+                        'ssl' => array(
+                            'verify_peer' => $this->verifySslCert
                         )
                     )
                 );
