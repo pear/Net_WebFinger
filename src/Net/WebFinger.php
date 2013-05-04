@@ -409,7 +409,15 @@ class Net_WebFinger
                 if ($content === false) {
                     $msg = 'Error loading XRD file';
                     if (isset($http_response_header)) {
-                        $msg .= ': ' . $http_response_header[0];
+                        $status = null;
+                        //we need this because there will be several HTTP/..
+                        // status lines when redirection is going on.
+                        foreach ($http_response_header as $header) {
+                            if (substr($header, 0, 5) == 'HTTP/') {
+                                $status = $header;
+                            }
+                        }
+                        $msg .= ': ' . $status;
                     };
                     throw new Net_WebFinger_Error(
                         $msg, Net_WebFinger_Error::NOT_FOUND,
