@@ -30,11 +30,11 @@ to RFC 6415 (host-meta + lrdd).
   <active>yes</active>
  </lead>
 
- <date>2012-03-03</date>
+ <date>2013-05-04</date>
 
  <version>
-  <release>0.2.1</release>
-  <api>0.2.0</api>
+  <release>0.3.0</release>
+  <api>0.3.0</api>
  </version>
  <stability>
   <release>alpha</release>
@@ -43,7 +43,8 @@ to RFC 6415 (host-meta + lrdd).
  <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
 
  <notes>
-  The subject of the host-meta file may not be checked.
+- Support draft-ietf-appsawg-webfinger-13
+- Nearly complete rework of the code
  </notes>
 
  <contents>
@@ -59,15 +60,17 @@ to RFC 6415 (host-meta + lrdd).
     </dir>
    </dir><!-- /src -->
    <dir name="examples">
-    <file name="webfinger-cli.php"    role="doc" />
     <file name="custom-http-adapter.php" role="doc" />
+    <file name="webfinger-cli.php"       role="doc" />
    </dir>
    <dir name="tests">
     <file name="AllTests.php"            role="test" />
+    <file name="HTTP_Request2_Adapter_LogMock.php" role="test" />
     <file name="subject.xrd"             role="test" />
     <file name="phpunit.xml"             role="test" />
     <dir name="Net">
      <file name="WebFingerTest.php"      role="test" />
+     <file name="WebFingerTestBase.php"  role="test" />
      <file name="WebFingerCacheTest.php" role="test" />
      <dir name="WebFinger">
       <file name="ReactionTest.php"      role="test" />
@@ -89,7 +92,7 @@ to RFC 6415 (host-meta + lrdd).
    <package>
     <name>XML_XRD</name>
     <channel>pear.php.net</channel>
-    <min>0.1.0</min>
+    <min>0.3.0</min>
    </package>
   </required>
 
@@ -109,6 +112,23 @@ to RFC 6415 (host-meta + lrdd).
 
  <phprelease />
  <changelog>
+
+  <release>
+   <version>
+    <release>0.3.0</release>
+    <api>0.3.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2013-05-04</date>
+   <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
+   <notes>
+    - Support draft-ietf-appsawg-webfinger-13
+    - Nearly complete rework of the code
+   </notes>
+  </release>
 
   <release>
    <version>
