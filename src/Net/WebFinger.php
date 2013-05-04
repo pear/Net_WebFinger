@@ -21,7 +21,7 @@ require_once 'Net/WebFinger/Reaction.php';
  * https://example.org/.well-known/webfinger?resource=acct:user@example.org
  *
  * If that fails, the account's host's .well-known/host-meta file is fetched,
- * then the file indicated by the "lrdd" type.
+ * then the file indicated by the "lrdd" type, as specificed by RFC 6415.
  *
  * <code>
  * require_once 'Net/WebFinger.php';

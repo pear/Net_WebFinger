@@ -18,6 +18,9 @@ link to portable contacts, hcard, foaf and other user pages.
 
 Distributed social networks use WebFinger to distribute public encryption keys,
 OStatus and Salmon URLs.
+
+Package supports draft-ietf-appsawg-webfinger-13 and can fall back
+to RFC 6415 (host-meta + lrdd).
  </description>
 
  <lead>

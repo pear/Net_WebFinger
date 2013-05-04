@@ -11,7 +11,52 @@ link to portable contacts, hcard, foaf and other user pages.
 Distributed social networks use WebFinger to distribute public encryption keys,
 OStatus and Salmon URLs.
 
+Package supports draft-ietf-appsawg-webfinger-13__ and can fall back
+to `RFC 6415`__ (host-meta + lrdd).
+
+__ http://tools.ietf.org/html/draft-ietf-appsawg-webfinger-13
+__ http://tools.ietf.org/html/rfc6415
+
 .. contents::
+
+
+==============
+Error handling
+==============
+The package does not throw any exceptions.
+Technically, ``Net_WebFinger_Error`` objects are exceptions, but they are
+only set as ``$error`` property in the ``Net_WebFinger_Reaction`` object.
+
+You can ignore them completely if you're just out to get the data.
+
+Sometimes it's even necessary to ignore the data.
+Yahoo! for example has a ``host-meta`` file, but no LRDD files.
+The OpenID provider URL already noted in ``host-meta``, so even though
+fetching the LRDD file fails, information about the OpenID provider is available.
+
+
+Error handling example
+======================
+The ``Net_WebFinger_Reaction`` object has an ``$error`` property that contains
+an exception with error message and code.
+It often even has a previous exception object with more underlying details::
+
+    <?php
+    require_once 'Net/WebFinger.php';
+    $wf  = new Net_WebFinger();
+    $react = $wf->finger('user@example.org');
+
+
+    if ($react->error !== null) {
+        echo "Error when fetching " . $react->url . "\n";
+        echo "Error: " . $react->error->getMessage() . "\n";
+        if ($react->error->getPrevious()) {
+            echo "Underlying error: "
+                . $react->error->getPrevious()->getMessage() . "\n";
+        }
+    }
+    ?>
+
 
 ========
 Examples
@@ -25,6 +70,9 @@ OpenID discovery
     require_once 'Net/WebFinger.php';
     $wf = new Net_WebFinger();
     $react = $wf->finger('user@example.org');
+    if ($react->error) {
+        echo 'There was an error: ' . $react->error->getMessage() . "\n";
+    }
     $openIdProvider = $react->get('http://specs.openid.net/auth/2.0/provider');
     if ($openIdProvider !== null) {
         echo 'OpenID provider found: ' . $openIdProvider . "\n";
@@ -34,13 +82,16 @@ OpenID discovery
 
 Simple link access
 ==================
-Some common link relations have a short name in Net_WebFinger. Those short
-names can be used to access them more easily::
+Some common link relations have a short name in ``Net_WebFinger``.
+Those short names can be used to access them more easily::
 
     <?php
     require_once 'Net/WebFinger.php';
     $wf  = new Net_WebFinger();
     $react = $wf->finger('user@example.org');
+    if ($react->error) {
+        echo 'There was an error: ' . $react->error->getMessage() . "\n";
+    }
     if ($react->openid !== null) {
         echo 'OpenID provider found: ' . $react->openid . "\n";
     }
@@ -53,6 +104,8 @@ Currently supported short names:
 - ``openid``
 - ``profile``
 - ``xfn``
+
+See the list ``$shortNameMap`` in class ``Net_WebFinger_Reaction``.
 
 
 Accessing all links
@@ -71,7 +124,7 @@ You can use ``foreach`` on the reaction object to get all links::
 
 Caching
 =======
-With caching, the retrieved host-meta files will be stored locally which leads
+With caching, the retrieved files will be stored locally which leads
 to faster lookup times when the same identifier (email address) is loaded again,
 and when another identifier on the same host is retrieved.
 ::
@@ -91,36 +144,17 @@ Note: PEAR's Cache_Lite package does not support per-item lifetimes, so we canno
 use it: http://pear.php.net/bugs/bug.php?id=13297
 
 
-XRD file access
-===============
-Sometimes the simple API is not enough and you need more details.
-The result object gives you access to the ``.well-known/host-meta`` and user
-XRD (LRDD) file objects::
-
-    <?php
-    require_once 'Net/WebFinger.php';
-    $wf  = new Net_WebFinger();
-    $react = $wf->finger('user@example.org');
-
-    $openIdLink = $react->userXrd->get('http://specs.openid.net/auth/2.0/provider');
-    echo $openIdLink->getTitle('de') . ':' . $openIdLink->href . "\n";
-
-    foreach ($react->hostMetaXrd as $link) {
-        echo $link->rel . ': ' . $link->href . "\n";
-    }
-    ?>
-
-
 Security
 ========
-The underlying XRD files will be retrieved via SSL when possible, with fallback
-to normal HTTP. In the latter case, the XRD files need to have valid signatures
-in order to be seen as secure.
+All files will be retrieved via SSL when possible, with fallback to normal HTTP.
 
-The XRD subject is also verified. When it does not match the host name of the
-email address, then the information are seen as insecure.
+The fallback for pure webfinger files does only happen when ``$fallbackToHttp``
+is enabled.
+Fallback for ``host-meta`` and LRDD files is always on.
 
-You should not trust the information if they are not secure.
+The XRD subject is also verified.
+When it does not match the host name of the email address, then the error
+object is set.
 
 ::
 
@@ -128,20 +162,15 @@ You should not trust the information if they are not secure.
     require_once 'Net/WebFinger.php';
     $wf  = new Net_WebFinger();
     $react = $wf->finger('user@example.org');
-    if (!$react->secure) {
+    if ($react->error || !$react->secure) {
         die("Those data may not be trusted\n");
     }
 
 
 Custom HTTP adapter
 ===================
-By default, the HTTP(S) XRD files are loaded by XML_XRD internally using
-``simplexml_load_file``, which emits PHP Warnings when the files are not found
-or other HTTP errors occur.
-
-To work around that limitation, or to set some custom HTTP request headers,
+If you want to send special HTTP headers or need e.g. proxy settings,
 you may use an own HTTP adapter that's used to fetch the files::
-
 
     <?php
     require_once 'HTTP/Request2.php';
@@ -154,7 +183,6 @@ you may use an own HTTP adapter that's used to fetch the files::
     $wf = new Net_WebFinger();
     $wf->setHttpClient($req);
     $react = $wf->finger('foo@example.org');
-
 
 
 =======
@@ -183,9 +211,9 @@ References
 ==========
 
 - `Webfinger mailing list`__
-- `First specification`__
+- `First webfinger specification`__
 - `Common link relations`__
-- `IETF draft`__
+- `IETF webfinger draft`__
 - http://hueniverse.com/2009/09/implementing-webfinger/
 - http://hueniverse.com/2009/09/openid-and-lrdd/
 - http://paulosman.me/2010/02/01/google-webfinger.html Google have since rolled out WebFinger support for everyone with a Google Profile.
@@ -195,13 +223,14 @@ References
 __ http://groups.google.com/group/webfinger
 __ http://code.google.com/p/webfinger/wiki/WebFingerProtocol
 __ http://code.google.com/p/webfinger/wiki/CommonLinkRelations
-__ http://www.ietf.org/id/draft-jones-appsawg-webfinger-00.txt
+__ http://tools.ietf.org/html/draft-ietf-appsawg-webfinger-13
 __ http://www.rajivshah.com/Case_Studies/Finger/Finger.htm
 __ http://docs.oasis-open.org/xri/xrd/v1.0/xrd-1.0.html
 
 
 Alternate implementations
 =========================
+See http://www.packetizer.com/webfinger/software.html
 
 - Ruby:
 
@@ -214,7 +243,7 @@ Alternate implementations
 
 __ http://intridea.com/2010/2/12/redfinger-a-ruby-webfinger-gem
 __ http://rubyforge.org/projects/webfinger/
-__ http://search.cpan.org/~tobyink/WWW-Finger-0.101/lib/WWW/Finger/Webfinger.pm
+__ http://search.cpan.org/~tobyink/WWW-Finger-0.104/lib/WWW/Finger/Webfinger.pm
 __ https://github.com/walkah/discovery-php
 __ http://blog.duthied.com/2011/08/30/webfinger-profile-plugin/
 __ http://wordpress.org/extend/plugins/webfinger-profile/
