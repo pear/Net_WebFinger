@@ -30,10 +30,10 @@ to RFC 6415 (host-meta + lrdd).
   <active>yes</active>
  </lead>
 
- <date>2013-05-04</date>
+ <date>2013-11-03</date>
 
  <version>
-  <release>0.3.0</release>
+  <release>0.3.1</release>
   <api>0.3.0</api>
  </version>
  <stability>
@@ -43,8 +43,7 @@ to RFC 6415 (host-meta + lrdd).
  <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
 
  <notes>
-- Support draft-ietf-appsawg-webfinger-13
-- Nearly complete rework of the code
+- Fix package.xml to validate against XSD
  </notes>
 
  <contents>
@@ -52,10 +51,10 @@ to RFC 6415 (host-meta + lrdd).
    <file name="README.rst"            role="doc" />
    <dir name="src">
     <dir name="Net">
-     <file name="WebFinger.php"       role="php" install-as="Net/WebFinger.php" />
+     <file name="WebFinger.php"       role="php" />
      <dir name="WebFinger">
-      <file name="Error.php"          role="php" install-as="Net/WebFinger/Error.php" />
-      <file name="Reaction.php"       role="php" install-as="Net/WebFinger/Reaction.php" />
+      <file name="Error.php"          role="php" />
+      <file name="Reaction.php"       role="php" />
      </dir>
     </dir>
    </dir><!-- /src -->
@@ -110,8 +109,31 @@ to RFC 6415 (host-meta + lrdd).
   </optional>
  </dependencies>
 
- <phprelease />
+ <phprelease>
+  <filelist>
+   <install name="src/Net/WebFinger.php" as="Net/WebFinger.php" />
+   <install name="src/Net/WebFinger/Error.php" role="php" as="Net/WebFinger/Error.php" />
+   <install name="src/Net/WebFinger/Reaction.php" role="php" as="Net/WebFinger/Reaction.php" />
+  </filelist>
+ </phprelease>
+
  <changelog>
+
+  <release>
+   <version>
+    <release>0.3.1</release>
+    <api>0.3.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2013-11-03</date>
+   <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
+   <notes>
+    - Fix package.xml to validate against XSD
+   </notes>
+  </release>
 
   <release>
    <version>
