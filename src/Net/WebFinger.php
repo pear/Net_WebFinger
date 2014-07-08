@@ -101,7 +101,40 @@ class Net_WebFinger
     public function finger($identifier)
     {
         $identifier = strtolower($identifier);
-        $host       = substr($identifier, strpos($identifier, '@') + 1);
+
+        if (!preg_match("/^([a-zA-Z^:]+):(.*)$/i", $identifier, $match)) {
+            $scheme = "acct";
+        } else {
+            $scheme = $match[1];
+        }
+
+        $host = null;
+
+        switch ($scheme) {
+            case "http":
+            case "https":
+                $host = parse_url($identifier, PHP_URL_HOST);
+                break;
+            case "acct":
+            case "mailto":
+            case "xmpp":
+                if (strpos($identifier, '@') !== false) {
+                    $host = substr($identifier, strpos($identifier, '@') + 1);
+                }
+                break;
+        }
+
+        if (empty($host)) {
+            $react = new Net_WebFinger_Reaction();
+            $react->url = $identifier;
+            $react->error = new Net_WebFinger_Error(
+                'Idendifier not supported',
+                Net_WebFinger_Error::NOT_SUPPORTED,
+                $react->error
+            );
+
+            return $react;
+        }
 
         $react = $this->loadWebfinger($identifier, $host);
 
@@ -127,6 +160,7 @@ class Net_WebFinger
                 $react->error
             );
         }
+
         return $react;
     }
 
@@ -142,7 +176,7 @@ class Net_WebFinger
      */
     protected function loadWebfinger($identifier, $host)
     {
-        $account = 'acct:' . $identifier;
+        $account = $identifier;
         $userUrl = 'https://' . $host . '/.well-known/webfinger?resource='
             . urlencode($account);
 
@@ -213,6 +247,7 @@ class Net_WebFinger
             Net_WebFinger_Error::NO_HOSTMETA,
             $react->error
         );
+
         return $react;
     }
 
@@ -240,6 +275,7 @@ class Net_WebFinger
                 Net_WebFinger_Error::NO_LRDD_LINK
             );
             $this->mergeHostMeta($react, $hostMeta);
+
             return $react;
         }
 
@@ -259,6 +295,7 @@ class Net_WebFinger
                 $react->error
             );
             $this->mergeHostMeta($react, $hostMeta);
+
             return $react;
         }
 
