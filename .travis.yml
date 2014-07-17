@@ -4,7 +4,7 @@ php:
   - 5.4
   - 5.3
 install:
-  - pear install pear/PHP_CodeSniffer pear/xml_xrd-alpha pear/http_request2
+  - pear install pear/PHP_CodeSniffer pear/xml_xrd-alpha pear/http_request2 pear/cache
   - phpenv rehash
 script:
   - phpcs -n src
