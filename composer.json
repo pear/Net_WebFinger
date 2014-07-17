@@ -22,6 +22,8 @@
         "pear/xml_xrd": "*"
     },
     "require-dev": {
+        "pear/cache": "*",
+        "pear/http_request2": "*",
         "phpunit/phpunit": "*"
     },
     "suggest": {

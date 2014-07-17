@@ -30,11 +30,11 @@ to RFC 6415 (host-meta + lrdd).
   <active>yes</active>
  </lead>
 
- <date>2013-11-04</date>
+ <date>2014-07-17</date>
 
  <version>
-  <release>0.3.2</release>
-  <api>0.3.0</api>
+  <release>0.4.0</release>
+  <api>0.4.0</api>
  </version>
  <stability>
   <release>alpha</release>
@@ -43,7 +43,7 @@ to RFC 6415 (host-meta + lrdd).
  <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
 
  <notes>
-- Fix package.xml to validate against XSD #2
+  - Support RFC 7033 (final webfinger spec) with non-"acct:" URIs
  </notes>
 
  <contents>
@@ -118,6 +118,22 @@ to RFC 6415 (host-meta + lrdd).
  </phprelease>
 
  <changelog>
+
+  <release>
+   <version>
+    <release>0.4.0</release>
+    <api>0.4.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2014-07-17</date>
+   <license uri="http://www.gnu.org/licenses/lgpl.html">LGPL</license>
+   <notes>
+    - Support RFC 7033 (final webfinger spec) with non-"acct:" URIs
+   </notes>
+  </release>
 
   <release>
    <version>
