@@ -82,6 +82,29 @@ class Net_WebFingerTestBase extends PHPUnit_Framework_TestCase
         );
     }
 
+    protected function getWebfingerXmpp()
+    {
+        return implode(
+            "\r\n",
+            array(
+                'HTTP/1.1 200 OK',
+                'Content-Type: application/jrd+json',
+                'Connection: close',
+                '',
+                '{',
+                '    "subject" : "xmpp:user@example.org",',
+                '    "links" : [',
+                '        {',
+                '            "rel" : "http://webfinger.example/rel/avatar",',
+                '            "type" : "image/jpeg",',
+                '            "href" : "http://www.example.com/~user/user.jpg"',
+                '        }',
+                '    ]',
+                '}'
+            )
+        );
+    }
+
     protected function getHostMeta()
     {
         return implode(

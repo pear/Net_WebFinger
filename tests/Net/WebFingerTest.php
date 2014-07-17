@@ -25,6 +25,21 @@ class Net_WebFingerTest extends Net_WebFingerTestBase
         $this->assertDescribes('acct:user@example.org', $react);
     }
 
+    public function testFingerXmpp()
+    {
+        $this->addHttpResponse(
+            $this->getWebfingerXmpp(),
+            'https://example.org/.well-known/webfinger?resource=xmpp%3Auser%40example.org'
+        );
+
+        $react = $this->wf->finger('xmpp:user@example.org');
+
+        $this->assertUrlList(
+            'https://example.org/.well-known/webfinger?resource=xmpp%3Auser%40example.org'
+        );
+        $this->assertDescribes('xmpp:user@example.org', $react);
+    }
+
     public function testFingerWebfingerFallbackHttp()
     {
         $this->addHttpResponse(

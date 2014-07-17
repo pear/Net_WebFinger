@@ -51,6 +51,11 @@ class Net_WebFinger_Error extends Exception
      * No webfinger data found
      */
     const NOTHING = 2342015;
+
+    /**
+     * Identifier not supported
+     */
+    const NOT_SUPPORTED = 2342016;
 }
 
 ?>
