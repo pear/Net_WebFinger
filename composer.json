@@ -7,10 +7,9 @@
         }
     ],
     "autoload": {
-        "classmap": [
-            "src/"
-        ]
+        "psr-0": { "": "src/" }
     },
+    "include-path": [ "src/" ],
     "description": "WebFinger implementation for PHP",
     "license": "LGPL",
     "name": "pear/net_webfinger",
