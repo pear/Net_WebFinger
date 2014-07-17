@@ -19,7 +19,6 @@
     },
     "type": "library",
     "require": {
-        "pear/pear_exception": "dev-master",
         "pear/xml_xrd": "*"
     },
     "require-dev": {
