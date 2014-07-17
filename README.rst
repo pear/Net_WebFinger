@@ -11,10 +11,10 @@ link to portable contacts, hcard, foaf and other user pages.
 Distributed social networks use WebFinger to distribute public encryption keys,
 OStatus and Salmon URLs.
 
-Package supports draft-ietf-appsawg-webfinger-13__ and can fall back
+Package supports Webfinger (`RFC 7033`__) and can fall back
 to `RFC 6415`__ (host-meta + lrdd).
 
-__ http://tools.ietf.org/html/draft-ietf-appsawg-webfinger-13
+__ http://tools.ietf.org/html/rfc7033
 __ http://tools.ietf.org/html/rfc6415
 
 .. contents::
