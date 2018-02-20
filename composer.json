@@ -11,8 +11,9 @@
     },
     "include-path": [ "src/" ],
     "description": "WebFinger implementation for PHP",
-    "license": "LGPL",
+    "license": "LGPL-3.0-or-later",
     "name": "pear/net_webfinger",
+    "homepage": "http://pear.php.net/package/Net_Webfinger",
     "support": {
         "issues": "http://pear.php.net/bugs/search.php?cmd=display&package_name[]=Net_WebFinger",
         "source": "https://github.com/pear/Net_WebFinger"
