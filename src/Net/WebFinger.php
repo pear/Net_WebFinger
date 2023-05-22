@@ -456,7 +456,7 @@ class Net_WebFinger
                 $context = stream_context_create(
                     array(
                         'http' => array(
-                            'user-agent' => 'PEAR Net_WebFinger',
+                            'user_agent' => 'PEAR Net_WebFinger',
                             'header' => 'accept: application/jrd+json, application/xrd+xml;q=0.9',
                             'follow_location' => true,
                             'max_redirects' => 20
